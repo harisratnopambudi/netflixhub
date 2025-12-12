@@ -377,6 +377,48 @@ body {
     background: #f59e0b;
 }
 
+/* ===== Household Confirm Card ===== */
+.email-card.household-confirm {
+    border-left-color: #22c55e;
+}
+
+.email-card.household-confirm .card-label {
+    background: #22c55e;
+}
+
+.card-warning {
+    font-size: 0.75rem;
+    color: #f59e0b;
+    margin-top: 6px;
+    font-weight: 500;
+}
+
+.household-confirm-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: #22c55e;
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.2s;
+    white-space: nowrap;
+}
+
+.household-confirm-btn:hover {
+    background: #16a34a;
+}
+
+.household-confirm-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
 /* ===== Loading State ===== */
 .loading-state {
     display: flex;
@@ -489,7 +531,9 @@ body {
     }
 
     .otp-display,
-    .household-btn {
+    .household-btn,
+    .temp-access-btn,
+    .household-confirm-btn {
         width: 100%;
         justify-content: center;
     }

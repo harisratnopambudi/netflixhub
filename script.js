@@ -63,7 +63,7 @@ function showLoading() {
     elements.cardsContainer.innerHTML = `
         <div class="loading-state">
             <div class="spinner"></div>
-            <p>Memuat data dari Gmail...</p>
+            <p>Memuat data dari server...</p>
         </div>
     `;
     elements.emptyState.style.display = 'none';
@@ -114,6 +114,23 @@ function renderCards(data, searchQuery = '') {
         });
     }
 
+    // Filter and add Household Confirm links (Ya, Itu Saya)
+    if (data.householdConfirmLinks) {
+        data.householdConfirmLinks.forEach(item => {
+            const account = item.account || extractEmail(item.from);
+            cards.push({
+                type: 'householdConfirm',
+                account: account,
+                fullEmail: item.to || '',
+                subject: item.subject || 'Konfirmasi Update Rumah Netflix',
+                link: item.link,
+                requester: item.requester,
+                date: item.date,
+                sortDate: new Date(item.date)
+            });
+        });
+    }
+
     // Filter and add Household links
     data.householdLinks.forEach(item => {
         const account = item.account || extractEmail(item.from);
@@ -143,6 +160,8 @@ function renderCards(data, searchQuery = '') {
             return createOTPCard(card);
         } else if (card.type === 'tempAccess') {
             return createTempAccessCard(card);
+        } else if (card.type === 'householdConfirm') {
+            return createHouseholdConfirmCard(card);
         } else {
             return createHouseholdCard(card);
         }
@@ -210,6 +229,43 @@ function createTempAccessCard(item) {
                     <path d="M7 11V7a5 5 0 0110 0v4"/>
                 </svg>
                 Dapatkan Kode
+            </a>
+        </div>
+    `;
+}
+
+/**
+ * Create Household Confirm card HTML (Ya, Itu Saya button)
+ */
+function createHouseholdConfirmCard(item) {
+    const timeAgo = formatTimeAgo(item.date);
+
+    // Tampilkan nama peminta di badge
+    const badgeDisplay = item.requester ? item.requester.name : formatAccountName(item.account);
+
+    // Format requester info
+    let requesterText = 'Permintaan konfirmasi update Rumah Netflix';
+    if (item.requester) {
+        requesterText = `Diminta oleh ${item.requester.name} dari ${item.requester.device}`;
+    }
+
+    return `
+        <div class="email-card household-confirm">
+            <div class="card-content">
+                <div class="card-header">
+                    <span class="card-label">Update Rumah</span>
+                    <span class="account-badge">${escapeHtml(badgeDisplay)}</span>
+                    <span class="card-time">${timeAgo}</span>
+                </div>
+                <div class="card-email">Akun: ${maskEmail(item.fullEmail || item.account)}</div>
+                <div class="card-subject">${escapeHtml(requesterText)}</div>
+                <div class="card-warning">⚠️ Link kedaluwarsa dalam 15 menit</div>
+            </div>
+            <a href="${item.link}" target="_blank" rel="noopener noreferrer" class="household-confirm-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 6L9 17l-5-5"/>
+                </svg>
+                Ya, Itu Saya
             </a>
         </div>
     `;
