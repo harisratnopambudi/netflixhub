@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Netflix Access Hub</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <span class="netflix-text">NETFLIX</span>
+                <span class="divider">|</span>
+                <span class="hub-text">Access Hub</span>
+            </div>
+            <button class="mode-btn" id="mode-btn">
+                <span class="mode-dot"></span>
+                <span id="mode-text">Connecting...</span>
+            </button>
+        </header>
+
+        <!-- Main Container -->
+        <main class="main-container">
+            <!-- Title Section -->
+            <div class="title-section">
+                <h1>Kode Akses Netflix</h1>
+                <p class="subtitle">Kode OTP, kode akses sementara, dan link household<br>akan muncul otomatis di bawah
+                    ini.</p>
+            </div>
+
+            <!-- Cards Container -->
+            <div class="cards-container" id="cards-container">
+                <div class="loading-state">
+                    <div class="spinner"></div>
+                    <p>Memuat data dari Gmail...</p>
+                </div>
+            </div>
+
+            <!-- Empty State -->
+            <div class="empty-state" id="empty-state" style="display: none;">
+                <p>Tidak ada email Netflix ditemukan</p>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p class="privacy-note">Data diperbarui otomatis setiap 30 detik.</p>
+            <p class="credits">Build by <strong>Haris Ratno Pambudi</strong></p>
+        </footer>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <span id="toast-message">Kode OTP berhasil disalin!</span>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
