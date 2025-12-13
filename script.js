@@ -6,8 +6,10 @@
 // KONFIGURASI
 // ============================================
 const CONFIG = {
-    API_URL: 'https://script.google.com/macros/s/AKfycby_HdfwsgMzwLEPQ4Cb59ueHGSfBMEbn2V7EAcYUJsBs6lHzemZ3k7ANOZ6Y0iM8TxZ/exec',
-    REFRESH_INTERVAL: 30000, // 30 detik
+    // API URL utama
+    API_URLS: [
+        'https://script.google.com/macros/s/AKfycby_HdfwsgMzwLEPQ4Cb59ueHGSfBMEbn2V7EAcYUJsBs6lHzemZ3k7ANOZ6Y0iM8TxZ/exec',
+    ]
 };
 
 // ============================================
@@ -24,6 +26,7 @@ const elements = {
     modeText: document.getElementById('mode-text'),
     toast: document.getElementById('toast'),
     toastMessage: document.getElementById('toast-message'),
+    refreshBtn: document.getElementById('refresh-btn'),
 };
 
 // ============================================
@@ -31,28 +34,72 @@ const elements = {
 // ============================================
 
 /**
- * Fetch data dari Google Apps Script
+ * Fetch data dari Google Apps Script dengan fallback ke backup API
  */
 async function fetchData() {
-    try {
-        showLoading();
+    showLoading();
 
-        const response = await fetch(CONFIG.API_URL);
-        const result = await response.json();
+    // Add spinning animation to refresh button
+    if (elements.refreshBtn) {
+        elements.refreshBtn.classList.add('spinning');
+    }
 
-        if (!result.success) {
-            throw new Error(result.error || 'Gagal memuat data');
+    let lastError = null;
+
+    // Coba semua API URLs berurutan
+    for (let i = 0; i < CONFIG.API_URLS.length; i++) {
+        const apiUrl = CONFIG.API_URLS[i];
+
+        try {
+            console.log(`Mencoba API ${i + 1}/${CONFIG.API_URLS.length}...`);
+
+            const response = await fetch(apiUrl);
+            const result = await response.json();
+
+            if (!result.success) {
+                // Jika error quota, coba API berikutnya
+                if (result.error && result.error.includes('too many times')) {
+                    console.warn(`API ${i + 1} limit tercapai, mencoba backup...`);
+                    lastError = new Error(result.error);
+                    continue; // Coba API berikutnya
+                }
+                throw new Error(result.error || 'Gagal memuat data');
+            }
+
+            // Sukses!
+            allData = result.data;
+            renderCards(allData);
+            elements.modeText.textContent = CONFIG.API_URLS.length > 1 ? `Online (API ${i + 1})` : 'Online';
+
+            // Remove spinning animation
+            if (elements.refreshBtn) {
+                elements.refreshBtn.classList.remove('spinning');
+            }
+            return; // Selesai, tidak perlu coba API lain
+
+        } catch (error) {
+            console.error(`API ${i + 1} error:`, error);
+            lastError = error;
+            // Lanjut ke API berikutnya
         }
+    }
 
-        allData = result.data;
-        renderCards(allData);
-        elements.modeText.textContent = 'Online';
+    // Semua API gagal
+    console.error('Semua API gagal:', lastError);
+    elements.modeText.textContent = 'Error';
 
-    } catch (error) {
-        console.error('Fetch error:', error);
-        elements.modeText.textContent = 'Error';
+    // Tampilkan pesan error yang lebih informatif
+    if (lastError && lastError.message.includes('too many times')) {
+        showToast('Semua API mencapai batas harian. Coba lagi besok.', true);
+    } else {
         showToast('Gagal memuat data. Cek console untuk detail.', true);
-        showEmpty();
+    }
+
+    showEmpty();
+
+    // Remove spinning animation
+    if (elements.refreshBtn) {
+        elements.refreshBtn.classList.remove('spinning');
     }
 }
 
@@ -327,7 +374,7 @@ function formatAccountName(account) {
 
 /**
  * Mask email for privacy with CSS blur
- * Returns HTML with blurred portion - uses placeholder text
+ * Blur semua kecuali domain (@gmail.com)
  */
 function maskEmail(email) {
     if (!email) return '';
@@ -336,23 +383,11 @@ function maskEmail(email) {
     const atIndex = email.indexOf('@');
     if (atIndex === -1) return email;
 
-    const localPart = email.substring(0, atIndex);
     const domain = email.substring(atIndex);
 
-    // Generate placeholder text (same length as original, but random-looking)
+    // Blur semua bagian sebelum @ (termasuk suffix +netflix1)
     const placeholder = '●●●●●●●●';
-
-    // Check if there's a + suffix
-    const plusIndex = localPart.indexOf('+');
-
-    if (plusIndex !== -1) {
-        // Has suffix like +netflix1 - keep suffix visible
-        const suffix = localPart.substring(plusIndex);
-        return `<span class="blur-text">${placeholder}</span>${suffix}${domain}`;
-    } else {
-        // No suffix, blur with placeholder
-        return `<span class="blur-text">${placeholder}</span>${domain}`;
-    }
+    return `<span class="blur-text">${placeholder}</span>${domain}`;
 }
 
 // ============================================
@@ -443,18 +478,15 @@ function showToast(message, isError = false) {
 // Initialize
 // ============================================
 
-// Check if API URL is configured
-if (CONFIG.API_URL.includes('PASTE_YOUR')) {
+// Check if API URLs are configured
+if (CONFIG.API_URLS.length === 0 || CONFIG.API_URLS[0].includes('PASTE_YOUR')) {
     elements.modeText.textContent = 'Not Configured';
     elements.cardsContainer.innerHTML = `
         <div class="empty-state">
-            <p>⚠️ API URL belum dikonfigurasi. Buka <strong>script.js</strong> dan ganti <code>API_URL</code>.</p>
+            <p>⚠️ API URL belum dikonfigurasi. Buka <strong>script.js</strong> dan tambahkan URL di <code>API_URLS</code>.</p>
         </div>
     `;
 } else {
-    // Initial fetch
+    // Initial fetch when page loads
     fetchData();
-
-    // Auto-refresh
-    setInterval(fetchData, CONFIG.REFRESH_INTERVAL);
 }
