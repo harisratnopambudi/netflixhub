@@ -174,9 +174,12 @@ function renderSubscriptions() {
         grouped[email].sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
     });
 
+    // Sort emails ascending
+    const sortedEmails = Object.keys(grouped).sort((a, b) => a.localeCompare(b));
+
     // Render grouped view
     let html = '';
-    Object.keys(grouped).forEach(email => {
+    sortedEmails.forEach(email => {
         const profiles = grouped[email];
         html += `
             <div class="email-group">
