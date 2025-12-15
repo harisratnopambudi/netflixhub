@@ -335,8 +335,26 @@ async function handleSubmit(event) {
 }
 
 async function deleteMember(id) {
-    if (!confirm('Yakin ingin menghapus member ini?')) return;
+    showConfirm(id);
+}
 
+function showConfirm(id) {
+    const overlay = document.getElementById('confirm-overlay');
+    const deleteBtn = document.getElementById('confirm-delete-btn');
+
+    overlay.classList.add('show');
+
+    deleteBtn.onclick = async function () {
+        hideConfirm();
+        await performDelete(id);
+    };
+}
+
+function hideConfirm() {
+    document.getElementById('confirm-overlay').classList.remove('show');
+}
+
+async function performDelete(id) {
     try {
         const response = await fetch(`${ADMIN_CONFIG.API_URL}?action=deleteSubscription&id=${id}`);
         const result = await response.json();
