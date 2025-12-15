@@ -428,7 +428,7 @@ function showInfo(id) {
             </div>
             <div class="info-item">
                 <span class="info-label">Status</span>
-                <span class="info-value">${dueInfo.text}</span>
+                <span class="status-badge ${dueInfo.class === 'due-overdue' || dueInfo.class === 'due-today' ? 'unpaid' : 'paid'}">${dueInfo.text || 'Dibayar'}</span>
             </div>
             <div class="info-item">
                 <span class="info-label">Catatan</span>
