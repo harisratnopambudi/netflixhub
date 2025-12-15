@@ -481,7 +481,7 @@ function renderCalendar() {
 
         let tooltip = '';
         if (hasDue) {
-            const names = hasDue.map(s => `${s.profileName} (${s.customerName})`).join(', ');
+            const names = hasDue.map(s => s.profileName).join(', ');
             tooltip = `title="${hasDue.length} jatuh tempo: ${names}"`;
         }
 
