@@ -154,6 +154,11 @@ function renderSubscriptions() {
         grouped[sub.email].push(sub);
     });
 
+    // Sort each group by due date (closest first)
+    Object.keys(grouped).forEach(email => {
+        grouped[email].sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+    });
+
     // Render grouped view
     let html = '';
     Object.keys(grouped).forEach(email => {
