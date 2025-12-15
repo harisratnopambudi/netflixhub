@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Netflix Access Hub</title>
+
+    <!-- Security Meta Tags -->
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
+    <meta name="robots" content="noindex, nofollow">
+
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="app">
+        <!-- Header -->
+        <header class="header">
+            <a href="index.html" class="logo">
+                <span class="netflix-text">NETFLIX</span>
+                <span class="divider">|</span>
+                <span class="hub-text">Admin</span>
+            </a>
+            <div class="header-actions">
+                <button class="logout-btn" id="logout-btn" style="display: none;" onclick="logout()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
+                        <polyline points="16 17 21 12 16 7" />
+                        <line x1="21" y1="12" x2="9" y2="12" />
+                    </svg>
+                    Logout
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Container -->
+        <main class="main-container">
+            <!-- Login Section -->
+            <div class="admin-login" id="login-section">
+                <div class="login-card">
+                    <div class="login-icon">🔐</div>
+                    <h2>Admin Access</h2>
+                    <p>Masukkan password untuk mengakses panel admin</p>
+                    <form onsubmit="handleLogin(event)">
+                        <div class="input-group">
+                            <input type="password" id="password-input" placeholder="Password" required>
+                        </div>
+                        <button type="submit" class="login-submit-btn" id="login-btn">
+                            <span id="login-text">Login</span>
+                            <div class="btn-spinner" id="login-spinner" style="display: none;"></div>
+                        </button>
+                        <p class="login-error" id="login-error"></p>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Dashboard Section -->
+            <div class="admin-dashboard" id="dashboard-section" style="display: none;">
+                <!-- Title Section -->
+                <div class="title-section">
+                    <h1>Netflix Subscriptions</h1>
+                    <p class="subtitle">Kelola member Netflix dan jatuh tempo langganan</p>
+                </div>
+
+                <!-- Actions Bar -->
+                <div class="admin-actions">
+                    <button class="add-btn" onclick="showAddModal()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19" />
+                            <line x1="5" y1="12" x2="19" y2="12" />
+                        </svg>
+                        Tambah Member
+                    </button>
+                    <button class="refresh-btn" onclick="loadSubscriptions()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="23 4 23 10 17 10"></polyline>
+                            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Subscriptions Table -->
+                <div class="subscriptions-container" id="subscriptions-container">
+                    <div class="loading-state">
+                        <div class="spinner"></div>
+                        <p>Memuat data...</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p class="credits">Build by <strong>Haris Ratno Pambudi</strong></p>
+        </footer>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div class="modal-overlay" id="modal-overlay" onclick="closeModal()">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 id="modal-title">Tambah Member</h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <form id="member-form" onsubmit="handleSubmit(event)">
+                <input type="hidden" id="member-id">
+                <div class="form-group">
+                    <label for="member-email">Email Netflix</label>
+                    <input type="email" id="member-email" placeholder="user@gmail.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="member-profiles">Profil (pisahkan dengan koma)</label>
+                    <input type="text" id="member-profiles" placeholder="Profil 1, Profil 2, Profil 3" required>
+                </div>
+                <div class="form-group">
+                    <label for="member-due">Jatuh Tempo</label>
+                    <input type="date" id="member-due" required>
+                </div>
+                <div class="form-group">
+                    <label for="member-notes">Catatan (opsional)</label>
+                    <textarea id="member-notes" placeholder="Catatan tambahan..."></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="cancel-btn" onclick="closeModal()">Batal</button>
+                    <button type="submit" class="submit-btn" id="submit-btn">
+                        <span id="submit-text">Simpan</span>
+                        <div class="btn-spinner" id="submit-spinner" style="display: none;"></div>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <span id="toast-message">Berhasil!</span>
+    </div>
+
+    <script src="admin.js"></script>
+</body>
+
+</html>
