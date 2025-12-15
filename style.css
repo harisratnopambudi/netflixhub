@@ -1286,6 +1286,16 @@ body {
     background: var(--bg-card-hover);
 }
 
+.action-btn.edit-btn:hover {
+    color: #3b82f6;
+    border-color: #3b82f6;
+}
+
+.action-btn.delete-btn:hover {
+    color: #ef4444;
+    border-color: #ef4444;
+}
+
 .col-name .profile-name {
     font-weight: 600;
     display: block;
