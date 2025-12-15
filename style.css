@@ -907,31 +907,42 @@ body {
 
 /* ===== Modal ===== */
 .modal-overlay {
-    display: none;
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.8);
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
     z-index: 100;
+    display: flex;
     align-items: center;
     justify-content: center;
     padding: 20px;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
 }
 
 .modal-overlay.show {
-    display: flex;
+    opacity: 1;
+    visibility: visible;
 }
 
 .modal {
     background: var(--bg-card);
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-lg);
+    border-radius: 16px;
     width: 100%;
     max-width: 480px;
     max-height: 90vh;
     overflow-y: auto;
+    transform: scale(0.9) translateY(20px);
+    transition: transform 0.3s ease;
+}
+
+.modal-overlay.show .modal {
+    transform: scale(1) translateY(0);
 }
 
 .modal-header {
