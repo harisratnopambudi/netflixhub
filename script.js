@@ -194,7 +194,7 @@ function renderCards(data, searchQuery = '') {
 
     // Sort by date (newest first) and limit to 5 cards
     cards.sort((a, b) => b.sortDate - a.sortDate);
-    const displayCards = cards.slice(0, 5);
+    const displayCards = cards.slice(0, 3);
 
     if (displayCards.length === 0) {
         showEmpty();
