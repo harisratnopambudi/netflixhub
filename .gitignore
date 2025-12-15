@@ -1,1 +1,2 @@
-# Empty - no files ignored
+# Ignore Google Apps Script folder
+google-apps-script/
