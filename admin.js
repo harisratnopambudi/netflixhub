@@ -28,7 +28,8 @@ const adminElements = {
     memberForm: document.getElementById('member-form'),
     memberId: document.getElementById('member-id'),
     memberEmail: document.getElementById('member-email'),
-    memberProfiles: document.getElementById('member-profiles'),
+    memberProfile: document.getElementById('member-profile'),
+    memberCustomer: document.getElementById('member-customer'),
     memberDue: document.getElementById('member-due'),
     memberNotes: document.getElementById('member-notes'),
     submitBtn: document.getElementById('submit-btn'),
@@ -146,8 +147,8 @@ function renderSubscriptions() {
     const html = `
         <div class="subscriptions-table">
             <div class="table-header">
-                <div class="col-email">Email</div>
-                <div class="col-profiles">Profil</div>
+                <div class="col-profile">Profil</div>
+                <div class="col-customer">Pelanggan</div>
                 <div class="col-due">Jatuh Tempo</div>
                 <div class="col-actions">Aksi</div>
             </div>
@@ -160,18 +161,16 @@ function renderSubscriptions() {
 
 function createSubscriptionRow(sub) {
     const dueInfo = getDueInfo(sub.dueDate);
-    const profiles = sub.profiles ? sub.profiles.split(',').map(p => p.trim()) : [];
 
     return `
         <div class="table-row">
-            <div class="col-email">
-                <span class="email-text">${escapeHtml(sub.email)}</span>
-                ${sub.notes ? `<span class="notes-text">${escapeHtml(sub.notes)}</span>` : ''}
+            <div class="col-profile">
+                <span class="profile-text">👤 ${escapeHtml(sub.profileName)}</span>
+                <span class="email-subtext">${escapeHtml(sub.email)}</span>
             </div>
-            <div class="col-profiles">
-                <div class="profiles-list">
-                    ${profiles.map(p => `<span class="profile-badge">👤 ${escapeHtml(p)}</span>`).join('')}
-                </div>
+            <div class="col-customer">
+                <span class="customer-text">${escapeHtml(sub.customerName)}</span>
+                ${sub.notes ? `<span class="notes-text">${escapeHtml(sub.notes)}</span>` : ''}
             </div>
             <div class="col-due">
                 <span class="due-badge ${dueInfo.class}">${dueInfo.text}</span>
@@ -241,7 +240,8 @@ function editMember(id) {
     adminElements.modalTitle.textContent = 'Edit Member';
     adminElements.memberId.value = member.id;
     adminElements.memberEmail.value = member.email;
-    adminElements.memberProfiles.value = member.profiles || '';
+    adminElements.memberProfile.value = member.profileName || '';
+    adminElements.memberCustomer.value = member.customerName || '';
     adminElements.memberDue.value = member.dueDate;
     adminElements.memberNotes.value = member.notes || '';
     adminElements.modalOverlay.classList.add('show');
@@ -263,7 +263,8 @@ async function handleSubmit(event) {
     const data = {
         id: adminElements.memberId.value || generateId(),
         email: adminElements.memberEmail.value,
-        profiles: adminElements.memberProfiles.value,
+        profileName: adminElements.memberProfile.value,
+        customerName: adminElements.memberCustomer.value,
         dueDate: adminElements.memberDue.value,
         notes: adminElements.memberNotes.value
     };

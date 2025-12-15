@@ -800,13 +800,32 @@ body {
     background: var(--bg-card-hover);
 }
 
+.col-profile .profile-text {
+    font-weight: 600;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.col-profile .email-subtext {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    display: block;
+}
+
+.col-customer .customer-text {
+    font-weight: 500;
+    display: block;
+    margin-bottom: 4px;
+}
+
 .col-email .email-text {
     font-weight: 600;
     display: block;
     margin-bottom: 4px;
 }
 
-.col-email .notes-text {
+.col-email .notes-text,
+.col-customer .notes-text {
     font-size: 0.75rem;
     color: var(--text-muted);
     display: block;

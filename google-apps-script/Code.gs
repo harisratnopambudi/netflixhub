@@ -532,8 +532,9 @@ function getSubscriptionsSheet() {
   
   if (!sheet) {
     sheet = ss.insertSheet(SUBSCRIPTIONS_SHEET_NAME);
-    sheet.getRange(1, 1, 1, 5).setValues([['ID', 'Email', 'Profiles', 'DueDate', 'Notes']]);
-    sheet.getRange(1, 1, 1, 5).setFontWeight('bold');
+    // New structure: per profile with customer info
+    sheet.getRange(1, 1, 1, 6).setValues([['ID', 'Email', 'ProfileName', 'CustomerName', 'DueDate', 'Notes']]);
+    sheet.getRange(1, 1, 1, 6).setFontWeight('bold');
   }
   return sheet;
 }
@@ -554,9 +555,10 @@ function getSubscriptions() {
         subscriptions.push({
           id: data[i][0],
           email: data[i][1],
-          profiles: data[i][2],
-          dueDate: formatDateForOutput(data[i][3]),
-          notes: data[i][4] || ''
+          profileName: data[i][2],
+          customerName: data[i][3],
+          dueDate: formatDateForOutput(data[i][4]),
+          notes: data[i][5] || ''
         });
       }
     }
@@ -582,7 +584,7 @@ function formatDateForOutput(date) {
 function addSubscription(data) {
   try {
     const sheet = getSubscriptionsSheet();
-    sheet.appendRow([data.id, data.email, data.profiles, data.dueDate, data.notes || '']);
+    sheet.appendRow([data.id, data.email, data.profileName, data.customerName, data.dueDate, data.notes || '']);
     return { success: true };
   } catch (error) {
     return { success: false, error: error.message };
@@ -599,7 +601,7 @@ function updateSubscription(data) {
     
     for (let i = 1; i < allData.length; i++) {
       if (allData[i][0] === data.id) {
-        sheet.getRange(i + 1, 2, 1, 4).setValues([[data.email, data.profiles, data.dueDate, data.notes || '']]);
+        sheet.getRange(i + 1, 2, 1, 5).setValues([[data.email, data.profileName, data.customerName, data.dueDate, data.notes || '']]);
         return { success: true };
       }
     }
