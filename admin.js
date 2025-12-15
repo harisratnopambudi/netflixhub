@@ -388,12 +388,12 @@ function showInfo(id) {
 
     const dueInfo = getDueInfo(member.dueDate);
     const waMessage = encodeURIComponent(
-        `🎬 *Info Netflix*\n\n` +
-        `📧 Email: ${member.email}\n` +
-        `👤 Profil: ${member.profileName || '-'}\n` +
-        `🔐 PIN: ${member.pin || '-'}\n` +
-        `📅 Jatuh Tempo: ${formatDate(member.dueDate)}\n` +
-        `${member.notes ? `📝 Catatan: ${member.notes}` : ''}`
+        `*INFO LOGIN NETFLIX*\n\n` +
+        `*Profile :* ${member.profileName || '-'}\n` +
+        `*Email :* ${member.email}\n` +
+        `*Password :* purwakarta01\n` +
+        `*PIN :* ${member.pin || '-'}\n` +
+        `*Expire Date :* ${formatDate(member.dueDate)}`
     );
 
     const infoContent = `
