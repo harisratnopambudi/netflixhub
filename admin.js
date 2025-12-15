@@ -28,8 +28,7 @@ const adminElements = {
     memberForm: document.getElementById('member-form'),
     memberId: document.getElementById('member-id'),
     memberEmail: document.getElementById('member-email'),
-    memberProfile: document.getElementById('member-profile'),
-    memberCustomer: document.getElementById('member-customer'),
+    memberName: document.getElementById('member-name'),
     memberDue: document.getElementById('member-due'),
     memberNotes: document.getElementById('member-notes'),
     submitBtn: document.getElementById('submit-btn'),
@@ -44,6 +43,8 @@ const adminElements = {
 // ============================================
 let subscriptions = [];
 let isEditing = false;
+let currentView = 'list';
+let calendarDate = new Date();
 
 // ============================================
 // Authentication
@@ -144,50 +145,54 @@ function renderSubscriptions() {
         return;
     }
 
-    const html = `
-        <div class="subscriptions-table">
-            <div class="table-header">
-                <div class="col-profile">Profil</div>
-                <div class="col-customer">Pelanggan</div>
-                <div class="col-due">Jatuh Tempo</div>
-                <div class="col-actions">Aksi</div>
+    // Group subscriptions by email
+    const grouped = {};
+    subscriptions.forEach(sub => {
+        if (!grouped[sub.email]) {
+            grouped[sub.email] = [];
+        }
+        grouped[sub.email].push(sub);
+    });
+
+    // Render grouped view
+    let html = '';
+    Object.keys(grouped).forEach(email => {
+        const profiles = grouped[email];
+        html += `
+            <div class="email-group">
+                <div class="email-group-header">
+                    <span class="email-icon">📧</span>
+                    <span class="email-title">${escapeHtml(email)}</span>
+                    <span class="profile-count">${profiles.length} slot</span>
+                </div>
+                <div class="email-group-content">
+                    <div class="member-row header">
+                        <div>Nama Profil</div>
+                        <div>Jatuh Tempo</div>
+                        <div>Status</div>
+                        <div>Aksi</div>
+                    </div>
+                    ${profiles.map(sub => createSubscriptionRow(sub)).join('')}
+                </div>
             </div>
-            ${subscriptions.map(sub => createSubscriptionRow(sub)).join('')}
-        </div>
-    `;
+        `;
+    });
 
     adminElements.subscriptionsContainer.innerHTML = html;
 }
 
 function createSubscriptionRow(sub) {
     const dueInfo = getDueInfo(sub.dueDate);
+    const isPastDue = dueInfo.class === 'due-overdue' || dueInfo.class === 'due-today';
 
     return `
-        <div class="table-row">
-            <div class="col-profile">
-                <span class="profile-text">👤 ${escapeHtml(sub.profileName)}</span>
-                <span class="email-subtext">${escapeHtml(sub.email)}</span>
-            </div>
-            <div class="col-customer">
-                <span class="customer-text">${escapeHtml(sub.customerName)}</span>
-                ${sub.notes ? `<span class="notes-text">${escapeHtml(sub.notes)}</span>` : ''}
-            </div>
-            <div class="col-due">
-                <span class="due-badge ${dueInfo.class}">${dueInfo.text}</span>
-            </div>
-            <div class="col-actions">
-                <button class="action-btn edit-btn" onclick="editMember('${sub.id}')" title="Edit">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
-                        <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                    </svg>
-                </button>
-                <button class="action-btn delete-btn" onclick="deleteMember('${sub.id}')" title="Hapus">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="3 6 5 6 21 6"/>
-                        <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
-                    </svg>
-                </button>
+        <div class="member-row ${isPastDue ? 'needs-payment' : ''}">
+            <div class="member-name">👤 ${escapeHtml(sub.profileName)}</div>
+            <div class="member-date">${formatDate(sub.dueDate)}</div>
+            <div class="member-status ${dueInfo.class}">${dueInfo.text}</div>
+            <div class="member-actions">
+                <button class="action-btn" onclick="editMember('${sub.id}')" title="Edit">✏️</button>
+                <button class="action-btn" onclick="deleteMember('${sub.id}')" title="Hapus">🗑️</button>
             </div>
         </div>
     `;
@@ -210,7 +215,7 @@ function getDueInfo(dateString) {
     } else if (diffDays <= 7) {
         return { text: `🟢 ${diffDays} hari lagi`, class: 'due-normal' };
     } else {
-        return { text: formatDate(dateString), class: 'due-normal' };
+        return { text: `🟢 ${diffDays} hari lagi`, class: 'due-normal' };
     }
 }
 
@@ -240,8 +245,7 @@ function editMember(id) {
     adminElements.modalTitle.textContent = 'Edit Member';
     adminElements.memberId.value = member.id;
     adminElements.memberEmail.value = member.email;
-    adminElements.memberProfile.value = member.profileName || '';
-    adminElements.memberCustomer.value = member.customerName || '';
+    adminElements.memberName.value = member.profileName || '';
     adminElements.memberDue.value = member.dueDate;
     adminElements.memberNotes.value = member.notes || '';
     adminElements.modalOverlay.classList.add('show');
@@ -263,8 +267,7 @@ async function handleSubmit(event) {
     const data = {
         id: adminElements.memberId.value || generateId(),
         email: adminElements.memberEmail.value,
-        profileName: adminElements.memberProfile.value,
-        customerName: adminElements.memberCustomer.value,
+        profileName: adminElements.memberName.value,
         dueDate: adminElements.memberDue.value,
         notes: adminElements.memberNotes.value
     };
@@ -276,11 +279,17 @@ async function handleSubmit(event) {
 
     try {
         const action = isEditing ? 'updateSubscription' : 'addSubscription';
-        const response = await fetch(`${ADMIN_CONFIG.API_URL}?action=${action}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
+        // Use GET with URL params to avoid CORS issues
+        const params = new URLSearchParams({
+            action: action,
+            id: data.id,
+            email: data.email,
+            name: data.profileName,
+            dueDate: data.dueDate,
+            notes: data.notes || ''
         });
+
+        const response = await fetch(`${ADMIN_CONFIG.API_URL}?${params.toString()}`);
         const result = await response.json();
 
         if (result.success) {
@@ -319,6 +328,25 @@ async function deleteMember(id) {
     }
 }
 
+async function markAsPaid(id) {
+    if (!confirm('Tandai sudah bayar? Jatuh tempo akan ditambah 1 bulan.')) return;
+
+    try {
+        const response = await fetch(`${ADMIN_CONFIG.API_URL}?action=markAsPaid&id=${id}`);
+        const result = await response.json();
+
+        if (result.success) {
+            showToast(`✅ Pembayaran dicatat! Jatuh tempo baru: ${formatDate(result.newDueDate)}`);
+            loadSubscriptions();
+        } else {
+            throw new Error(result.error || 'Gagal menyimpan');
+        }
+    } catch (error) {
+        console.error('Payment error:', error);
+        showToast('Gagal menyimpan: ' + error.message, true);
+    }
+}
+
 // ============================================
 // Utility Functions
 // ============================================
@@ -344,6 +372,118 @@ function showToast(message, isError = false) {
     setTimeout(() => {
         adminElements.toast.classList.remove('show');
     }, 3000);
+}
+
+// ============================================
+// Calendar Functions
+// ============================================
+
+function setView(view) {
+    currentView = view;
+    const listContainer = document.getElementById('subscriptions-container');
+    const calendarContainer = document.getElementById('calendar-container');
+    const listBtn = document.getElementById('list-view-btn');
+    const calendarBtn = document.getElementById('calendar-view-btn');
+
+    if (view === 'list') {
+        listContainer.style.display = 'block';
+        calendarContainer.style.display = 'none';
+        listBtn.classList.add('active');
+        calendarBtn.classList.remove('active');
+    } else {
+        listContainer.style.display = 'none';
+        calendarContainer.style.display = 'block';
+        listBtn.classList.remove('active');
+        calendarBtn.classList.add('active');
+        renderCalendar();
+    }
+}
+
+function changeMonth(delta) {
+    calendarDate.setMonth(calendarDate.getMonth() + delta);
+    renderCalendar();
+}
+
+function renderCalendar() {
+    const year = calendarDate.getFullYear();
+    const month = calendarDate.getMonth();
+
+    // Update header
+    const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+    document.getElementById('calendar-month-year').textContent = `${monthNames[month]} ${year}`;
+
+    // Build due dates map
+    const dueDatesMap = {};
+    subscriptions.forEach(sub => {
+        const dueDate = sub.dueDate;
+        if (!dueDatesMap[dueDate]) {
+            dueDatesMap[dueDate] = [];
+        }
+        dueDatesMap[dueDate].push(sub);
+    });
+
+    // Calculate calendar days
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const startPadding = firstDay.getDay(); // 0 = Sunday
+    const totalDays = lastDay.getDate();
+
+    // Build grid HTML
+    let html = `
+        <div class="calendar-day-header">Min</div>
+        <div class="calendar-day-header">Sen</div>
+        <div class="calendar-day-header">Sel</div>
+        <div class="calendar-day-header">Rab</div>
+        <div class="calendar-day-header">Kam</div>
+        <div class="calendar-day-header">Jum</div>
+        <div class="calendar-day-header">Sab</div>
+    `;
+
+    // Empty cells for padding
+    for (let i = 0; i < startPadding; i++) {
+        html += `<div class="calendar-day empty"></div>`;
+    }
+
+    // Day cells
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    for (let day = 1; day <= totalDays; day++) {
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const currentDate = new Date(year, month, day);
+        const isToday = currentDate.getTime() === today.getTime();
+        const hasDue = dueDatesMap[dateStr];
+
+        let classes = 'calendar-day';
+        if (isToday) classes += ' today';
+        if (hasDue) {
+            // Check if soon (within 3 days from today)
+            const diffDays = Math.ceil((currentDate - today) / (1000 * 60 * 60 * 24));
+            if (diffDays >= 0 && diffDays <= 3) {
+                classes += ' has-due due-soon';
+            } else if (diffDays < 0) {
+                classes += ' has-due due-overdue';
+            } else {
+                classes += ' has-due';
+            }
+        }
+
+        let tooltip = '';
+        if (hasDue) {
+            const names = hasDue.map(s => `${s.profileName} (${s.customerName})`).join(', ');
+            tooltip = `title="${hasDue.length} jatuh tempo: ${names}"`;
+        }
+
+        html += `
+            <div class="${classes}" ${tooltip}>
+                <span class="day-number">${day}</span>
+                ${hasDue ? `<span class="due-count">${hasDue.length}</span>` : ''}
+            </div>
+        `;
+    }
+
+    document.getElementById('calendar-grid').innerHTML = html;
 }
 
 // ============================================

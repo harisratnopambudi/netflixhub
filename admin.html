@@ -78,19 +78,63 @@
                         </svg>
                         Tambah Member
                     </button>
-                    <button class="refresh-btn" onclick="loadSubscriptions()">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="23 4 23 10 17 10"></polyline>
-                            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-                        </svg>
-                    </button>
+                    <div class="view-toggle">
+                        <button class="view-btn active" id="list-view-btn" onclick="setView('list')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="8" y1="6" x2="21" y2="6" />
+                                <line x1="8" y1="12" x2="21" y2="12" />
+                                <line x1="8" y1="18" x2="21" y2="18" />
+                                <line x1="3" y1="6" x2="3.01" y2="6" />
+                                <line x1="3" y1="12" x2="3.01" y2="12" />
+                                <line x1="3" y1="18" x2="3.01" y2="18" />
+                            </svg>
+                        </button>
+                        <button class="view-btn" id="calendar-view-btn" onclick="setView('calendar')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                                <line x1="16" y1="2" x2="16" y2="6" />
+                                <line x1="8" y1="2" x2="8" y2="6" />
+                                <line x1="3" y1="10" x2="21" y2="10" />
+                            </svg>
+                        </button>
+                        <button class="refresh-btn" onclick="loadSubscriptions()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="23 4 23 10 17 10"></polyline>
+                                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
 
-                <!-- Subscriptions Table -->
+                <!-- List View -->
                 <div class="subscriptions-container" id="subscriptions-container">
                     <div class="loading-state">
                         <div class="spinner"></div>
                         <p>Memuat data...</p>
+                    </div>
+                </div>
+
+                <!-- Calendar View -->
+                <div class="calendar-container" id="calendar-container" style="display: none;">
+                    <div class="calendar-header">
+                        <button class="calendar-nav" onclick="changeMonth(-1)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="15 18 9 12 15 6" />
+                            </svg>
+                        </button>
+                        <h3 id="calendar-month-year">Desember 2025</h3>
+                        <button class="calendar-nav" onclick="changeMonth(1)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9 18 15 12 9 6" />
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="calendar-grid" id="calendar-grid">
+                        <!-- Calendar will be rendered here -->
+                    </div>
+                    <div class="calendar-legend">
+                        <span class="legend-item"><span class="legend-dot due-soon"></span> Segera</span>
+                        <span class="legend-item"><span class="legend-dot due-normal"></span> Normal</span>
                     </div>
                 </div>
             </div>
@@ -116,12 +160,8 @@
                     <input type="email" id="member-email" placeholder="user@gmail.com" required>
                 </div>
                 <div class="form-group">
-                    <label for="member-profile">Nama Profil Netflix</label>
-                    <input type="text" id="member-profile" placeholder="Profil 1" required>
-                </div>
-                <div class="form-group">
-                    <label for="member-customer">Nama Pelanggan</label>
-                    <input type="text" id="member-customer" placeholder="Nama pembeli slot" required>
+                    <label for="member-name">Nama Profil</label>
+                    <input type="text" id="member-name" placeholder="contoh: Profil Andi" required>
                 </div>
                 <div class="form-group">
                     <label for="member-due">Jatuh Tempo</label>

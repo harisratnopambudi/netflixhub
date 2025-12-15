@@ -31,6 +31,7 @@ const CONFIG = {
 // Admin Configuration
 const ADMIN_PASSWORD = 'admin123'; // Ganti dengan password Anda
 const SUBSCRIPTIONS_SHEET_NAME = 'Subscriptions';
+const SPREADSHEET_ID = '1YP6ZRTl4S7UqTtE3OwCmYuoRXEWcBqnhEzaso4NvjGE';
 
 /**
  * Handler untuk HTTP GET requests
@@ -49,6 +50,29 @@ function doGet(e) {
     }
     if (action === 'deleteSubscription') {
       return jsonResponse(deleteSubscription(e.parameter.id));
+    }
+    if (action === 'addSubscription') {
+      const data = {
+        id: e.parameter.id,
+        email: e.parameter.email,
+        name: e.parameter.name || e.parameter.profileName,
+        dueDate: e.parameter.dueDate,
+        notes: e.parameter.notes || ''
+      };
+      return jsonResponse(addSubscription(data));
+    }
+    if (action === 'updateSubscription') {
+      const data = {
+        id: e.parameter.id,
+        email: e.parameter.email,
+        name: e.parameter.name || e.parameter.profileName,
+        dueDate: e.parameter.dueDate,
+        notes: e.parameter.notes || ''
+      };
+      return jsonResponse(updateSubscription(data));
+    }
+    if (action === 'markAsPaid') {
+      return jsonResponse(markAsPaid(e.parameter.id));
     }
     
     // Default: get Netflix emails
@@ -527,14 +551,14 @@ function testGetEmails() {
  * Get or create Subscriptions sheet
  */
 function getSubscriptionsSheet() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   let sheet = ss.getSheetByName(SUBSCRIPTIONS_SHEET_NAME);
   
   if (!sheet) {
     sheet = ss.insertSheet(SUBSCRIPTIONS_SHEET_NAME);
-    // New structure: per profile with customer info
-    sheet.getRange(1, 1, 1, 6).setValues([['ID', 'Email', 'ProfileName', 'CustomerName', 'DueDate', 'Notes']]);
-    sheet.getRange(1, 1, 1, 6).setFontWeight('bold');
+    // Simplified structure: ID, Email, Name, DueDate, Notes
+    sheet.getRange(1, 1, 1, 5).setValues([['ID', 'Email', 'ProfileName', 'DueDate', 'Notes']]);
+    sheet.getRange(1, 1, 1, 5).setFontWeight('bold');
   }
   return sheet;
 }
@@ -551,14 +575,20 @@ function getSubscriptions() {
     
     const subscriptions = [];
     for (let i = 1; i < data.length; i++) {
-      if (data[i][0]) {
+      // Check if row has email (column 2) - main required field
+      if (data[i][1]) {
+        // Auto-generate ID if empty
+        let id = data[i][0];
+        if (!id) {
+          id = 'sub_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+          sheet.getRange(i + 1, 1).setValue(id);
+        }
         subscriptions.push({
-          id: data[i][0],
+          id: id,
           email: data[i][1],
-          profileName: data[i][2],
-          customerName: data[i][3],
-          dueDate: formatDateForOutput(data[i][4]),
-          notes: data[i][5] || ''
+          profileName: data[i][2] || '',
+          dueDate: formatDateForOutput(data[i][3]),
+          notes: data[i][4] || ''
         });
       }
     }
@@ -584,7 +614,7 @@ function formatDateForOutput(date) {
 function addSubscription(data) {
   try {
     const sheet = getSubscriptionsSheet();
-    sheet.appendRow([data.id, data.email, data.profileName, data.customerName, data.dueDate, data.notes || '']);
+    sheet.appendRow([data.id, data.email, data.name, data.dueDate, data.notes || '']);
     return { success: true };
   } catch (error) {
     return { success: false, error: error.message };
@@ -601,7 +631,7 @@ function updateSubscription(data) {
     
     for (let i = 1; i < allData.length; i++) {
       if (allData[i][0] === data.id) {
-        sheet.getRange(i + 1, 2, 1, 5).setValues([[data.email, data.profileName, data.customerName, data.dueDate, data.notes || '']]);
+        sheet.getRange(i + 1, 2, 1, 4).setValues([[data.email, data.name, data.dueDate, data.notes || '']]);
         return { success: true };
       }
     }
@@ -629,4 +659,46 @@ function deleteSubscription(id) {
   } catch (error) {
     return { success: false, error: error.message };
   }
+}
+
+/**
+ * Mark subscription as paid and extend due date by 1 month
+ */
+function markAsPaid(id) {
+  try {
+    const sheet = getSubscriptionsSheet();
+    const allData = sheet.getDataRange().getValues();
+    
+    for (let i = 1; i < allData.length; i++) {
+      if (allData[i][0] === id) {
+        // Get current due date (column 4, index 3)
+        let currentDue = allData[i][3];
+        if (typeof currentDue === 'string') {
+          currentDue = new Date(currentDue);
+        }
+        
+        // Add 1 month
+        const newDue = new Date(currentDue);
+        newDue.setMonth(newDue.getMonth() + 1);
+        const newDueStr = formatDateForOutput(newDue);
+        
+        // Update the due date (column 4)
+        sheet.getRange(i + 1, 4).setValue(newDueStr);
+        return { success: true, newDueDate: newDueStr };
+      }
+    }
+    return { success: false, error: 'Not found' };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * RUN THIS FUNCTION FIRST to authorize spreadsheet access!
+ * Click Run (▶️) button above, then allow permissions.
+ */
+function testAuth() {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  Logger.log('Connected to: ' + ss.getName());
+  Logger.log('Sheets: ' + ss.getSheets().map(s => s.getName()).join(', '));
 }
