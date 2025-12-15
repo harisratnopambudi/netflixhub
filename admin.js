@@ -225,15 +225,15 @@ function getDueInfo(dateString) {
     const diffDays = Math.ceil((due - today) / (1000 * 60 * 60 * 24));
 
     if (diffDays < 0) {
-        return { text: `⚠️ Lewat ${Math.abs(diffDays)} hari`, class: 'due-overdue' };
+        return { text: `Lewat ${Math.abs(diffDays)} hari`, class: 'due-overdue' };
     } else if (diffDays === 0) {
-        return { text: '🔴 Hari ini!', class: 'due-today' };
+        return { text: 'Hari ini!', class: 'due-today' };
     } else if (diffDays <= 3) {
-        return { text: `🟡 ${diffDays} hari lagi`, class: 'due-soon' };
+        return { text: `${diffDays} hari lagi`, class: 'due-soon' };
     } else if (diffDays <= 5) {
-        return { text: `🟢 ${diffDays} hari lagi`, class: 'due-normal' };
+        return { text: `${diffDays} hari lagi`, class: 'due-normal' };
     } else {
-        return { text: '✅ Dibayar', class: 'due-paid' };
+        return { text: 'Dibayar', class: 'due-paid' };
     }
 }
 
