@@ -46,6 +46,7 @@ let subscriptions = [];
 let isEditing = false;
 let currentView = 'list';
 let calendarDate = new Date();
+let netflixPassword = '';
 
 // ============================================
 // Authentication
@@ -102,11 +103,24 @@ function showDashboard() {
     adminElements.loginSection.style.display = 'none';
     adminElements.dashboardSection.style.display = 'block';
     adminElements.logoutBtn.style.display = 'flex';
+    loadConfig();
 }
 
 // ============================================
 // Subscriptions CRUD
 // ============================================
+
+async function loadConfig() {
+    try {
+        const response = await fetch(`${ADMIN_CONFIG.API_URL}?action=getConfig`);
+        const result = await response.json();
+        if (result.success) {
+            netflixPassword = result.netflixPassword || '';
+        }
+    } catch (error) {
+        console.error('Failed to load config:', error);
+    }
+}
 
 async function loadSubscriptions() {
     adminElements.subscriptionsContainer.innerHTML = `
@@ -391,7 +405,7 @@ function showInfo(id) {
         `*INFO LOGIN NETFLIX*\n\n` +
         `*Profile :* ${member.profileName || '-'}\n` +
         `*Email :* ${member.email}\n` +
-        `*Password :* purwakarta01\n` +
+        `*Password :* ${netflixPassword}\n` +
         `*PIN :* ${member.pin || '-'}\n` +
         `*Expire Date :* ${formatDate(member.dueDate)}`
     );

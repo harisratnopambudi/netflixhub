@@ -30,6 +30,7 @@ const CONFIG = {
 
 // Admin Configuration
 const ADMIN_PASSWORD = 'admin123'; // Ganti dengan password Anda
+const NETFLIX_PASSWORD = 'purwakarta01'; // Password Netflix untuk share WA
 const SUBSCRIPTIONS_SHEET_NAME = 'Subscriptions';
 const SPREADSHEET_ID = '1YP6ZRTl4S7UqTtE3OwCmYuoRXEWcBqnhEzaso4NvjGE';
 
@@ -44,6 +45,9 @@ function doGet(e) {
     // Handle admin actions
     if (action === 'verifyPassword') {
       return jsonResponse({ success: true, valid: e.parameter.password === ADMIN_PASSWORD });
+    }
+    if (action === 'getConfig') {
+      return jsonResponse({ success: true, netflixPassword: NETFLIX_PASSWORD });
     }
     if (action === 'getSubscriptions') {
       return jsonResponse(getSubscriptions());
