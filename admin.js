@@ -217,10 +217,8 @@ function createSubscriptionRow(sub) {
             </div>
             <div class="member-actions">
                 <button class="action-btn info-btn" onclick="showInfo('${sub.id}')" title="Info">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                        <circle cx="12" cy="12" r="10"/>
-                        <line x1="12" y1="16" x2="12" y2="12"/>
-                        <line x1="12" y1="8" x2="12.01" y2="8"/>
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
                     </svg>
                 </button>
                 <button class="action-btn edit-btn" onclick="editMember('${sub.id}')" title="Edit">
