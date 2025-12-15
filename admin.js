@@ -230,10 +230,10 @@ function getDueInfo(dateString) {
         return { text: '🔴 Hari ini!', class: 'due-today' };
     } else if (diffDays <= 3) {
         return { text: `🟡 ${diffDays} hari lagi`, class: 'due-soon' };
-    } else if (diffDays <= 7) {
+    } else if (diffDays <= 5) {
         return { text: `🟢 ${diffDays} hari lagi`, class: 'due-normal' };
     } else {
-        return { text: `🟢 ${diffDays} hari lagi`, class: 'due-normal' };
+        return { text: '✅ Dibayar', class: 'due-paid' };
     }
 }
 
