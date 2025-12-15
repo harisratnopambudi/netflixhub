@@ -1,2 +1,2 @@
-# Ignore Google Apps Script folder
-# google-apps-script/
+# Ignore Google Apps Script folder (edit local only, don't deploy to GitHub)
+google-apps-script/
