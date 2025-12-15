@@ -166,7 +166,7 @@ function renderSubscriptions() {
         html += `
             <div class="email-group">
                 <div class="email-group-header">
-                    <span class="email-icon">📧</span>
+                    <img src="https://ssl.gstatic.com/ui/v1/icons/mail/rfr/gmail.ico" class="gmail-icon" alt="">
                     <span class="email-title">${escapeHtml(email)}</span>
                     <span class="profile-count">${profiles.length} slot</span>
                 </div>

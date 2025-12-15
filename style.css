@@ -1128,6 +1128,11 @@ body {
     flex: 1;
 }
 
+.gmail-icon {
+    width: 20px;
+    height: 20px;
+}
+
 .profile-count {
     font-size: 0.75rem;
     color: var(--text-muted);
