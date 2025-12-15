@@ -192,7 +192,7 @@ function createSubscriptionRow(sub) {
 
     return `
         <div class="member-row ${isPastDue ? 'needs-payment' : ''}">
-            <div class="member-name">👤 ${escapeHtml(sub.profileName)}</div>
+            <div class="member-name"><img src="https://netflix.com/favicon.ico" class="netflix-icon" alt=""> ${escapeHtml(sub.profileName)}</div>
             <div class="member-date">${formatDate(sub.dueDate)}</div>
             <div class="member-status ${dueInfo.class}">${dueInfo.text}</div>
             <div class="member-actions">
