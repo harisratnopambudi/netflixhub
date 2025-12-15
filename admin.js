@@ -204,7 +204,10 @@ function createSubscriptionRow(sub) {
 }
 
 function getDueInfo(dateString) {
+    if (!dateString) return { text: '-', class: '' };
     const due = new Date(dateString);
+    if (isNaN(due.getTime())) return { text: '-', class: '' };
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     due.setHours(0, 0, 0, 0);
@@ -225,7 +228,9 @@ function getDueInfo(dateString) {
 }
 
 function formatDate(dateString) {
+    if (!dateString) return '-';
     const date = new Date(dateString);
+    if (isNaN(date.getTime())) return dateString; // Return original if invalid
     return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
