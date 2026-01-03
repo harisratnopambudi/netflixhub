@@ -1327,6 +1327,12 @@ body {
     border-color: #ef4444;
 }
 
+.action-btn.wa-btn:hover {
+    color: #25d366;
+    border-color: #25d366;
+    background: rgba(37, 211, 102, 0.1);
+}
+
 .col-name .profile-name {
     font-weight: 600;
     display: block;
