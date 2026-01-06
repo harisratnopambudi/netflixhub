@@ -278,7 +278,7 @@ function renderSubscriptions() {
 
     // Render grouped view
     let html = '';
-    sortedEmails.forEach(email => {
+    sortedEmails.forEach((email, index) => {
         const profiles = grouped[email];
         // Determine profile type of this email group (first profile's type)
         const groupType = profiles[0]?.profileType || 'private';
@@ -339,13 +339,17 @@ function renderSubscriptions() {
         const isProfit = netProfit >= 0;
         const profitClass = isProfit ? 'profit-plus' : 'profit-minus';
 
+        // Alias for email
+        const accountAlias = `Netflix ${index + 1}`;
+
         html += `
             <div class="email-group">
                 <div class="email-group-header">
                     <div class="header-left">
                         <img src="https://ssl.gstatic.com/ui/v1/icons/mail/rfr/gmail.ico" class="gmail-icon" alt="">
                         <div class="header-info">
-                            <span class="email-title">${escapeHtml(email)}</span>
+                            <span class="email-title" title="${escapeHtml(email)}">${accountAlias}</span>
+                            <span style="font-size:0.7em; color:var(--text-muted); display:block; line-height:1;">${escapeHtml(email)}</span>
                             <div class="header-badges">
                                 ${typeBadge}
                                 <span class="profile-count">${profiles.length} slot</span>
@@ -879,12 +883,10 @@ function hideInfo() {
 
 function getWhatsAppMessage(member) {
     const dueInfo = getDueInfo(member.dueDate);
-    // Consider overdue if class is overdue. 
-    // If it's today (due-today), let's still consider it active for now, or maybe warning?
-    // The user said "jika status pembayaran sudah dibayar", so if it's NOT overdue, we send credentials.
-    const isOverdue = dueInfo.class === 'due-overdue';
+    // Modified condition: Overdue, Today, or Soon (<= 3 days)
+    const needsReminder = dueInfo.class === 'due-overdue' || dueInfo.class === 'due-today' || dueInfo.class === 'due-soon';
 
-    if (isOverdue) {
+    if (needsReminder) {
         return encodeURIComponent(
             `*BILLING REMINDER*\n\n` +
             `Halo Kak,\n` +
@@ -1070,13 +1072,16 @@ function renderCalendar() {
         }
 
         let tooltip = '';
+        let clickHandler = '';
+
         if (hasDue) {
             const names = hasDue.map(s => s.profileName).join(', ');
             tooltip = `title="${hasDue.length} jatuh tempo: ${names}"`;
+            clickHandler = `onclick="showDueMembers('${dateStr}')"`;
         }
 
         html += `
-            <div class="${classes}" ${tooltip}>
+            <div class="${classes}" ${tooltip} ${clickHandler}>
                 <span class="day-number">${day}</span>
                 ${hasDue ? `<span class="due-count">${hasDue.length}</span>` : ''}
             </div>
@@ -1084,6 +1089,63 @@ function renderCalendar() {
     }
 
     document.getElementById('calendar-grid').innerHTML = html;
+}
+
+function showDueMembers(dateStr) {
+    const date = new Date(dateStr);
+    const displayDate = date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+
+    // Find members
+    const dueMembers = subscriptions.filter(s => s.dueDate === dateStr);
+
+    let html = `
+        <div class="info-modal-content">
+            <div class="info-header-row" style="margin-bottom: 16px; display:flex; justify-content:space-between; align-items:center;">
+                 <h4 style="margin:0;">Jatuh Tempo: ${displayDate}</h4>
+                 <span class="badge" style="background:var(--netflix-red); padding: 2px 8px; border-radius:12px; font-size:12px;">${dueMembers.length} Member</span>
+            </div>
+            
+            <div class="due-list" style="display:flex; flex-direction:column; gap:12px; max-height:400px; overflow-y:auto;">
+    `;
+
+    dueMembers.forEach(member => {
+        const isSharing = member.profileType === 'sharing';
+        const typeLabel = isSharing ? 'Sharing' : 'Private';
+        const typeClass = isSharing ? 'sharing' : 'private';
+
+        html += `
+            <div class="due-item" style="background:var(--bg-secondary); padding:12px; border-radius:8px; border:1px solid var(--border-color); display:flex; align-items:center; justify-content:space-between;">
+                <div class="due-info">
+                    <div style="font-weight:600; margin-bottom:4px;">${escapeHtml(member.profileName)}</div>
+                    <div style="font-size:12px; color:var(--text-secondary);">${escapeHtml(member.email)}</div>
+                    <div style="font-size:10px; margin-top:4px;">
+                        <span class="group-type-badge ${typeClass}" style="font-size:10px; padding:2px 6px;">${typeLabel}</span>
+                        ${isSharing ? `<span style="color:var(--text-muted);">Slot ${member.slotNumber || 1}</span>` : ''}
+                    </div>
+                </div>
+                <div class="due-actions" style="display:flex; gap:8px;">
+                    <button type="button" class="action-btn wa-btn" onclick="shareWhatsApp('${member.id}')" title="Kirim Reminder" style="background:var(--bg-card); padding:8px; color: #25D366; border: 1px solid var(--border-color);">
+                         <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16" style="pointer-events: none;">
+                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                        </svg>
+                    </button>
+                    <button type="button" class="action-btn info-btn" onclick="showInfo('${member.id}')" title="Info Detail" style="background:var(--bg-card); padding:8px; border: 1px solid var(--border-color);">
+                         <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16" style="pointer-events: none;">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+
+    html += `
+            </div>
+        </div>
+    `;
+
+    document.getElementById('info-modal-body').innerHTML = html;
+    document.getElementById('info-overlay').classList.add('show');
 }
 
 // ============================================
@@ -1096,4 +1158,39 @@ if (sessionStorage.getItem(ADMIN_CONFIG.SESSION_KEY)) {
     loadSubscriptions();
 } else {
     showLogin();
+}
+
+// ============================================
+// PIN Generator
+// ============================================
+
+function generatePin() {
+    const pin = generateEasyPin();
+    const pinInput = document.getElementById('member-pin');
+    pinInput.value = pin;
+
+    // Trigger input event if needed for validation
+    pinInput.dispatchEvent(new Event('input'));
+
+    // focus just to be nice
+    pinInput.focus();
+}
+
+function generateEasyPin() {
+    // Generate patterns: ABAB (e.g., 1212) or AABB (e.g., 1122)
+    // Avoid patterns that are too simple like 0000 or 1111 (A==B)
+
+    let a, b;
+    do {
+        a = Math.floor(Math.random() * 10);
+        b = Math.floor(Math.random() * 10);
+    } while (a === b); // Ensure distinct digits
+
+    const pattern = Math.random() < 0.5 ? 'ABAB' : 'AABB';
+
+    if (pattern === 'ABAB') {
+        return `${a}${b}${a}${b}`;
+    } else {
+        return `${a}${a}${b}${b}`;
+    }
 }

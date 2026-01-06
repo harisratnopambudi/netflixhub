@@ -2364,6 +2364,19 @@ body {
         margin-left: auto;
         /* Push to right if there is space, or wrap */
     }
+
+    .header-info {
+        flex-direction: row;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .email-title {
+        max-width: none;
+        white-space: normal;
+        word-break: break-word;
+    }
 }
 
 @media (max-width: 480px) {
@@ -2387,4 +2400,43 @@ body {
         width: 100%;
         text-align: center;
     }
+}
+
+/* ===== Calendar Interaction ===== */
+.calendar-day.has-due {
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.calendar-day.has-due:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 10;
+}
+
+
+/* ===== Generate PIN Button ===== */
+.generate-pin-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.generate-pin-btn:hover {
+    border-color: var(--text-muted);
+    color: var(--text-primary);
+    background: var(--bg-card-hover);
+}
+
+.generate-pin-btn svg {
+    width: 12px;
+    height: 12px;
 }
