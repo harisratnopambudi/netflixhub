@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Netflix Access Hub</title>
+
+    <!-- Security Meta Tags -->
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
+
+    <!-- Identity & Description -->
+    <meta name="description"
+        content="Personal dashboard untuk mengakses kode OTP Netflix dan link household. Dibuat oleh Haris Ratno Pambudi.">
+    <meta name="author" content="Haris Ratno Pambudi">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="stylesheet" href="style.css?v=20260107-01">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <span class="netflix-text">NETFLIX</span>
+                <span class="divider">|</span>
+                <span class="hub-text">Access Hub</span>
+            </div>
+            <div class="header-actions">
+                <button class="refresh-btn" id="refresh-btn" onclick="fetchData()" title="Refresh">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="23 4 23 10 17 10"></polyline>
+                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                    </svg>
+                </button>
+                <a href="admin.html" class="admin-link-btn" title="Admin">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3" />
+                        <path
+                            d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" />
+                    </svg>
+                </a>
+                <button class="mode-btn" id="mode-btn">
+                    <span class="mode-dot"></span>
+                    <span id="mode-text">Connecting...</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Container -->
+        <main class="main-container">
+            <!-- Title Section -->
+            <div class="title-section">
+                <h1>Kode Akses Netflix</h1>
+                <p class="subtitle">Kode OTP, kode akses sementara, dan link household<br>akan muncul otomatis di bawah
+                    ini.</p>
+            </div>
+
+            <!-- Cards Container -->
+            <div class="cards-container" id="cards-container">
+                <div class="loading-state">
+                    <div class="spinner"></div>
+                    <p>Memuat data dari server...</p>
+                </div>
+            </div>
+
+            <!-- Empty State -->
+            <div class="empty-state" id="empty-state" style="display: none;">
+                <p>Tidak ada email Netflix ditemukan</p>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p class="privacy-note">Tekan tombol refresh untuk memperbarui data.</p>
+            <p class="credits">©2025 Netflix Access Hub. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <span id="toast-message">Kode OTP berhasil disalin!</span>
+    </div>
+
+    <script src="script.js?v=20260107-01"></script>
+    </script>
+</body>
+
+</html>

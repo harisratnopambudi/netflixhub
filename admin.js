@@ -1,0 +1,1065 @@
+/**
+ * Netflix Access Hub - Admin Script
+ */
+
+// ============================================
+// KONFIGURASI
+// ============================================
+const ADMIN_CONFIG = {
+    API_URL: 'https://script.google.com/macros/s/AKfycby_HdfwsgMzwLEPQ4Cb59ueHGSfBMEbn2V7EAcYUJsBs6lHzemZ3k7ANOZ6Y0iM8TxZ/exec',
+    SESSION_KEY: 'netflix_admin_session'
+};
+
+// ============================================
+// DOM Elements
+// ============================================
+const adminElements = {
+    loginSection: document.getElementById('login-section'),
+    dashboardSection: document.getElementById('dashboard-section'),
+    passwordInput: document.getElementById('password-input'),
+    loginBtn: document.getElementById('login-btn'),
+    loginText: document.getElementById('login-text'),
+    loginSpinner: document.getElementById('login-spinner'),
+    loginError: document.getElementById('login-error'),
+    logoutBtn: document.getElementById('logout-btn'),
+    subscriptionsContainer: document.getElementById('subscriptions-container'),
+    modalOverlay: document.getElementById('modal-overlay'),
+    modalTitle: document.getElementById('modal-title'),
+    memberForm: document.getElementById('member-form'),
+    memberId: document.getElementById('member-id'),
+    memberSlotNumber: document.getElementById('member-slot-number'),
+    memberIsSlotOwner: document.getElementById('member-is-slot-owner'),
+    memberEmail: document.getElementById('member-email'),
+    memberName: document.getElementById('member-name'),
+    memberPin: document.getElementById('member-pin'),
+    memberDue: document.getElementById('member-due'),
+    memberNotes: document.getElementById('member-notes'),
+    slotSelectionGroup: document.getElementById('slot-selection-group'),
+    slotOptions: document.getElementById('slot-options'),
+    pinGroup: document.getElementById('pin-group'),
+    pinHint: document.getElementById('pin-hint'),
+    submitBtn: document.getElementById('submit-btn'),
+    submitText: document.getElementById('submit-text'),
+    submitSpinner: document.getElementById('submit-spinner'),
+    toast: document.getElementById('toast'),
+    toastMessage: document.getElementById('toast-message')
+};
+
+// ============================================
+// Payment Tracking Logic
+// ============================================
+
+function openPaymentModal(email) {
+    const overlay = document.getElementById('payment-modal-overlay');
+    const emailInput = document.getElementById('payment-email');
+    const dateInput = document.getElementById('payment-date');
+
+    emailInput.value = email;
+
+    // Check if there's an existing value
+    const savedDate = localStorage.getItem(`netflix_payment_${email}`);
+    if (savedDate) {
+        dateInput.value = savedDate;
+    } else {
+        dateInput.valueAsDate = new Date(); // Default today
+    }
+
+    overlay.classList.add('show');
+}
+
+function closePaymentModal() {
+    const overlay = document.getElementById('payment-modal-overlay');
+    overlay.classList.remove('show');
+}
+
+function handlePaymentSubmit(event) {
+    event.preventDefault();
+
+    const email = document.getElementById('payment-email').value;
+    const date = document.getElementById('payment-date').value;
+
+    if (email && date) {
+        localStorage.setItem(`netflix_payment_${email}`, date);
+        closePaymentModal();
+        renderSubscriptions(); // Refresh UI
+        showToast('Info pembayaran disimpan');
+    }
+}
+
+// ============================================
+// Revenue Stats
+// ============================================
+// ============================================
+// State
+// ============================================
+let subscriptions = [];
+let isEditing = false;
+let currentView = 'list';
+let calendarDate = new Date();
+let netflixPassword = '';
+
+// ============================================
+// Authentication
+// ============================================
+
+async function handleLogin(event) {
+    event.preventDefault();
+
+    const password = adminElements.passwordInput.value;
+    if (!password) return;
+
+    // Show loading
+    adminElements.loginBtn.disabled = true;
+    adminElements.loginText.style.display = 'none';
+    adminElements.loginSpinner.style.display = 'block';
+    adminElements.loginError.textContent = '';
+
+    try {
+        const response = await fetch(`${ADMIN_CONFIG.API_URL}?action=verifyPassword&password=${encodeURIComponent(password)}`);
+        const result = await response.json();
+
+        if (result.success && result.valid) {
+            // Login success
+            sessionStorage.setItem(ADMIN_CONFIG.SESSION_KEY, 'true');
+            showDashboard();
+            loadSubscriptions();
+        } else {
+            adminElements.loginError.textContent = 'Password salah!';
+        }
+    } catch (error) {
+        console.error('Login error:', error);
+        adminElements.loginError.textContent = 'Gagal terhubung ke server';
+    } finally {
+        adminElements.loginBtn.disabled = false;
+        adminElements.loginText.style.display = 'block';
+        adminElements.loginSpinner.style.display = 'none';
+    }
+}
+
+function logout() {
+    sessionStorage.removeItem(ADMIN_CONFIG.SESSION_KEY);
+    showLogin();
+}
+
+function showLogin() {
+    adminElements.loginSection.style.display = 'flex';
+    adminElements.dashboardSection.style.display = 'none';
+    adminElements.logoutBtn.style.display = 'none';
+    adminElements.passwordInput.value = '';
+    adminElements.loginError.textContent = '';
+}
+
+function showDashboard() {
+    adminElements.loginSection.style.display = 'none';
+    adminElements.dashboardSection.style.display = 'block';
+    adminElements.logoutBtn.style.display = 'flex';
+    loadConfig();
+}
+
+// ============================================
+// Subscriptions CRUD
+// ============================================
+
+async function loadConfig() {
+    try {
+        const response = await fetch(`${ADMIN_CONFIG.API_URL}?action=getConfig`);
+        const result = await response.json();
+        if (result.success) {
+            netflixPassword = result.netflixPassword || '';
+        }
+    } catch (error) {
+        console.error('Failed to load config:', error);
+    }
+}
+
+async function loadSubscriptions() {
+    adminElements.subscriptionsContainer.innerHTML = `
+        <div class="loading-state">
+            <div class="spinner"></div>
+            <p>Memuat data...</p>
+        </div>
+    `;
+
+    try {
+        const response = await fetch(`${ADMIN_CONFIG.API_URL}?action=getSubscriptions`);
+        const result = await response.json();
+
+        if (result.success) {
+            subscriptions = result.data || [];
+            renderSubscriptions();
+        } else {
+            throw new Error(result.error || 'Gagal memuat data');
+        }
+    } catch (error) {
+        console.error('Load error:', error);
+        adminElements.subscriptionsContainer.innerHTML = `
+            <div class="empty-state">
+                <p>⚠️ Gagal memuat data. <a href="#" onclick="loadSubscriptions()">Coba lagi</a></p>
+            </div>
+        `;
+    }
+}
+
+function updateRevenueStats() {
+    const totalMembers = subscriptions.length;
+    const privateMembers = subscriptions.filter(s => s.profileType !== 'sharing').length;
+    const sharingMembers = subscriptions.filter(s => s.profileType === 'sharing').length;
+
+    // Calculate total income
+    let totalIncome = 0;
+    const uniqueEmails = new Set();
+
+    subscriptions.forEach(sub => {
+        const isSharing = sub.profileType === 'sharing';
+        // Use custom price if available, otherwise default
+        const price = sub.price || (isSharing ? 25000 : 50000);
+        totalIncome += parseInt(price);
+        uniqueEmails.add(sub.email);
+    });
+
+    // Calculate total cost (186k per unique email)
+    const totalCost = uniqueEmails.size * 186000;
+    const netProfit = totalIncome - totalCost;
+
+    // Format currency
+    const formatRp = (num) => {
+        const absVal = Math.abs(num).toLocaleString('id-ID');
+        return num < 0 ? '-Rp' + absVal : 'Rp' + absVal;
+    };
+
+    // Update UI
+    const statTotalEl = document.getElementById('stat-total-members');
+    const statPrivateEl = document.getElementById('stat-private');
+    const statSharingEl = document.getElementById('stat-sharing');
+    const statIncomeEl = document.getElementById('stat-income');
+    const statProfitEl = document.getElementById('stat-profit');
+
+    if (statTotalEl) statTotalEl.textContent = totalMembers;
+    if (statPrivateEl) statPrivateEl.textContent = privateMembers;
+    if (statSharingEl) statSharingEl.textContent = sharingMembers;
+    if (statIncomeEl) statIncomeEl.textContent = formatRp(totalIncome);
+
+    if (statProfitEl) {
+        statProfitEl.textContent = formatRp(netProfit);
+        // Color coding for global profit
+        statProfitEl.style.color = netProfit >= 0 ? '#3b82f6' : '#ef4444';
+    }
+}
+
+function renderSubscriptions() {
+    // Update revenue stats
+    updateRevenueStats();
+
+    if (subscriptions.length === 0) {
+        adminElements.subscriptionsContainer.innerHTML = `
+            <div class="empty-state">
+                <p>Belum ada data member. Klik "Tambah Member" untuk menambahkan.</p>
+            </div>
+        `;
+        return;
+    }
+
+    // Group subscriptions by email
+    const grouped = {};
+    subscriptions.forEach(sub => {
+        if (!grouped[sub.email]) {
+            grouped[sub.email] = [];
+        }
+        grouped[sub.email].push(sub);
+    });
+
+    // Sort each group by due date (closest first)
+    Object.keys(grouped).forEach(email => {
+        grouped[email].sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+    });
+
+    // Sort emails ascending
+    const sortedEmails = Object.keys(grouped).sort((a, b) => a.localeCompare(b));
+
+    // Render grouped view
+    let html = '';
+    sortedEmails.forEach(email => {
+        const profiles = grouped[email];
+        // Determine profile type of this email group (first profile's type)
+        const groupType = profiles[0]?.profileType || 'private';
+        const isSharing = groupType === 'sharing';
+        const typeBadge = isSharing
+            ? '<span class="group-type-badge sharing">SHARING</span>'
+            : '<span class="group-type-badge private">PRIVATE</span>';
+
+        // Calculate group revenue
+        let groupRevenue = 0;
+        profiles.forEach(p => {
+            const price = p.price || (p.profileType === 'sharing' ? 25000 : 50000);
+            groupRevenue += parseInt(price);
+        });
+
+        // Check payment status from LocalStorage
+        const paymentKey = `netflix_payment_${email}`;
+        const lastPaymentDate = localStorage.getItem(paymentKey);
+
+        // Subscription cost is constant
+        const subscriptionCost = 186000;
+
+        let paymentBadge = '';
+        let costDisplayClass = 'unpaid';
+
+        if (lastPaymentDate) {
+            // Check if payment is valid for current period (rough check: within last 30 days)
+            // ideally we compare with actual due date but for simple tracking:
+            const paymentDateObj = new Date(lastPaymentDate);
+            const formattedPaymentDate = paymentDateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+
+            paymentBadge = `
+                <div class="payment-status paid" onclick="openPaymentModal('${email}')" title="Dibayar tanggal ${lastPaymentDate}">
+                    <span class="check-icon">✓</span> Lunas ${formattedPaymentDate}
+                </div>
+            `;
+            costDisplayClass = 'paid';
+        } else {
+            paymentBadge = `
+                <button class="btn-pay-netflix" onclick="openPaymentModal('${email}')">
+                   + Bayar
+                </button>
+            `;
+        }
+
+        const netProfit = groupRevenue - subscriptionCost;
+
+        const formatMoney = (n) => {
+            const abs = Math.abs(n).toLocaleString('id-ID');
+            return n < 0 ? `-Rp${abs}` : `Rp${abs}`;
+        };
+
+        const groupRevenueStr = formatMoney(groupRevenue);
+        // Cost is always negative 186000 logic-wise for display, but subscriptionCost is positive int
+        const subscriptionCostStr = `-Rp${subscriptionCost.toLocaleString('id-ID')}`;
+        const netProfitStr = formatMoney(netProfit);
+
+        const isProfit = netProfit >= 0;
+        const profitClass = isProfit ? 'profit-plus' : 'profit-minus';
+
+        html += `
+            <div class="email-group">
+                <div class="email-group-header">
+                    <div class="header-left">
+                        <img src="https://ssl.gstatic.com/ui/v1/icons/mail/rfr/gmail.ico" class="gmail-icon" alt="">
+                        <div class="header-info">
+                            <span class="email-title">${escapeHtml(email)}</span>
+                            <div class="header-badges">
+                                ${typeBadge}
+                                <span class="profile-count">${profiles.length} slot</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="header-stats">
+                        <div class="h-stat">
+                            <span class="hs-label">Omzet</span>
+                            <span class="hs-value">${groupRevenueStr}</span>
+                        </div>
+                        <div class="h-stat">
+                            <span class="hs-label">Biaya</span>
+                            <span class="hs-value cost ${costDisplayClass}">${subscriptionCostStr}</span>
+                        </div>
+                        <div class="h-stat">
+                            <span class="hs-label">Profit</span>
+                            <span class="hs-value ${profitClass}">${netProfitStr}</span>
+                        </div>
+                        ${paymentBadge}
+                    </div>
+                </div>
+                <div class="email-group-content">
+                    <div class="member-row header">
+                        <div>Nama Profil</div>
+                        <div>Jatuh Tempo</div>
+                        <div>Status</div>
+                        <div>Aksi</div>
+                    </div>
+                    ${profiles.map(sub => createSubscriptionRow(sub)).join('')}
+                </div>
+            </div>
+        `;
+    });
+
+    adminElements.subscriptionsContainer.innerHTML = html;
+}
+
+function createSubscriptionRow(sub) {
+    const dueInfo = getDueInfo(sub.dueDate);
+    const isPastDue = dueInfo.class === 'due-overdue' || dueInfo.class === 'due-today';
+    const isSharing = sub.profileType === 'sharing';
+    const isOwner = sub.isSlotOwner !== false && sub.isSlotOwner !== 'false';
+
+    // Only show slot badge for sharing profiles
+    let slotBadge = '';
+    if (isSharing) {
+        const slotNum = sub.slotNumber || 1;
+        const ownerText = isOwner ? ' · Owner' : '';
+        slotBadge = `<span class="slot-badge">Slot ${slotNum}${ownerText}</span>`;
+    }
+
+    const displayName = escapeHtml(sub.profileName);
+
+    return `
+        <div class="member-row ${isPastDue ? 'needs-payment' : ''} ${isSharing ? 'sharing-row' : 'private-row'}">
+            <div class="member-name">
+                <img src="https://netflix.com/favicon.ico" class="netflix-icon" alt="">
+                <div class="name-with-badge">
+                    <span class="profile-display-name">${displayName}</span>
+                    ${slotBadge}
+                </div>
+            </div>
+            <div class="member-date">${formatDate(sub.dueDate)}</div>
+            <div class="member-status">
+                ${isPastDue ?
+            `<button class="status-badge unpaid" onclick="markAsPaid('${sub.id}')">Belum Bayar</button>` :
+            `<span class="status-badge paid">Dibayar</span>`
+        }
+            </div>
+            <div class="member-actions">
+                <button class="action-btn info-btn" onclick="showInfo('${sub.id}')" title="Info">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+                    </svg>
+                </button>
+                <button class="action-btn edit-btn" onclick="editMember('${sub.id}')" title="Edit">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                        <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                </button>
+                <button class="action-btn delete-btn" onclick="deleteMember('${sub.id}')" title="Hapus">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                        <polyline points="3 6 5 6 21 6"/>
+                        <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                    </svg>
+                </button>
+                <button class="action-btn wa-btn" onclick="shareWhatsApp('${sub.id}')" title="Share WhatsApp">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+function getDueInfo(dateString) {
+    if (!dateString) return { text: '-', class: '' };
+    const due = new Date(dateString);
+    if (isNaN(due.getTime())) return { text: '-', class: '' };
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    due.setHours(0, 0, 0, 0);
+
+    const diffDays = Math.ceil((due - today) / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) {
+        return { text: `Lewat ${Math.abs(diffDays)} hari`, class: 'due-overdue' };
+    } else if (diffDays === 0) {
+        return { text: 'Hari ini!', class: 'due-today' };
+    } else if (diffDays <= 3) {
+        return { text: `${diffDays} hari lagi`, class: 'due-soon' };
+    } else if (diffDays <= 5) {
+        return { text: `${diffDays} hari lagi`, class: 'due-normal' };
+    } else {
+        return { text: 'Dibayar', class: 'due-paid' };
+    }
+}
+
+function formatDate(dateString) {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return dateString; // Return original if invalid
+    return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+// ============================================
+// Modal Operations
+// ============================================
+
+function showAddModal() {
+    isEditing = false;
+    adminElements.modalTitle.textContent = 'Tambah Member';
+    adminElements.memberForm.reset();
+    adminElements.memberId.value = '';
+    adminElements.memberSlotNumber.value = '';
+    adminElements.memberIsSlotOwner.value = '';
+    adminElements.memberDue.value = getDefaultDueDate();
+    // Reset to private type
+    document.querySelector('input[name="profile-type"][value="private"]').checked = true;
+    toggleProfileType();
+    adminElements.modalOverlay.classList.add('show');
+}
+
+function toggleProfileType() {
+    const isSharing = document.querySelector('input[name="profile-type"]:checked').value === 'sharing';
+
+    // Show/hide slot selection
+    if (adminElements.slotSelectionGroup) {
+        adminElements.slotSelectionGroup.style.display = isSharing ? 'block' : 'none';
+    }
+
+    if (isSharing) {
+        populateSlotOptions();
+    } else {
+        // Private mode - show PIN, reset slot values
+        showPinInput(true);
+        adminElements.memberSlotNumber.value = '';
+        adminElements.memberIsSlotOwner.value = 'true';
+    }
+}
+
+function populateSlotOptions() {
+    const email = adminElements.memberEmail.value;
+
+    // Get sharing subscriptions for this email
+    const sharingMembers = subscriptions.filter(s =>
+        s.email === email && s.profileType === 'sharing'
+    );
+
+    // Group by slotNumber
+    const slots = {};
+    sharingMembers.forEach(m => {
+        const slot = m.slotNumber || 1;
+        if (!slots[slot]) {
+            slots[slot] = [];
+        }
+        slots[slot].push(m);
+    });
+
+    // Find available slots (slots with only 1 member)
+    const availableSlots = [];
+    const fullSlots = [];
+
+    Object.keys(slots).forEach(slotNum => {
+        const members = slots[slotNum];
+        if (members.length === 1) {
+            availableSlots.push({
+                slotNumber: parseInt(slotNum),
+                owner: members.find(m => m.isSlotOwner) || members[0]
+            });
+        } else {
+            fullSlots.push({
+                slotNumber: parseInt(slotNum),
+                members: members
+            });
+        }
+    });
+
+    // Determine next slot number
+    const maxSlot = Math.max(0, ...Object.keys(slots).map(n => parseInt(n)));
+    const nextSlotNumber = maxSlot + 1;
+
+    // Build slot options HTML
+    let html = '';
+
+    // Available slots (can join)
+    availableSlots.forEach(slot => {
+        html += `
+            <label class="slot-option available">
+                <input type="radio" name="slot-selection" value="${slot.slotNumber}" 
+                    data-is-owner="false" onchange="handleSlotSelect()">
+                <div class="slot-card">
+                    <span class="slot-number">Slot ${slot.slotNumber}</span>
+                    <span class="slot-members">${escapeHtml(slot.owner.profileName)}</span>
+                    <span class="slot-status available">1 TERSEDIA</span>
+                </div>
+            </label>
+        `;
+    });
+
+    // Full slots (info only, disabled)
+    fullSlots.forEach(slot => {
+        const names = slot.members.map(m => m.profileName).join(' & ');
+        html += `
+            <label class="slot-option full disabled">
+                <input type="radio" name="slot-selection" disabled>
+                <div class="slot-card">
+                    <span class="slot-number">Slot ${slot.slotNumber}</span>
+                    <span class="slot-members">${escapeHtml(names)}</span>
+                    <span class="slot-status full">PENUH</span>
+                </div>
+            </label>
+        `;
+    });
+
+    // New slot option
+    html += `
+        <label class="slot-option new">
+            <input type="radio" name="slot-selection" value="${nextSlotNumber}" 
+                data-is-owner="true" onchange="handleSlotSelect()" checked>
+            <div class="slot-card">
+                <span class="slot-number">+ Slot Baru</span>
+                <span class="slot-members">Buat slot baru (Slot ${nextSlotNumber})</span>
+                <span class="slot-status new">OWNER</span>
+            </div>
+        </label>
+    `;
+
+    adminElements.slotOptions.innerHTML = html;
+    handleSlotSelect(); // Initialize based on default selection
+}
+
+function handleSlotSelect() {
+    const selected = document.querySelector('input[name="slot-selection"]:checked');
+    if (!selected) return;
+
+    const slotNumber = selected.value;
+    const isOwner = selected.dataset.isOwner === 'true';
+
+    adminElements.memberSlotNumber.value = slotNumber;
+    adminElements.memberIsSlotOwner.value = isOwner;
+
+    showPinInput(isOwner);
+}
+
+function showPinInput(show) {
+    const pinInput = adminElements.memberPin;
+    const pinHint = adminElements.pinHint;
+
+    if (show) {
+        pinInput.style.display = 'block';
+        pinInput.disabled = false;
+        if (pinHint) pinHint.style.display = 'none';
+    } else {
+        pinInput.style.display = 'none';
+        pinInput.disabled = true;
+        pinInput.value = '';
+        if (pinHint) pinHint.style.display = 'block';
+    }
+}
+
+function editMember(id) {
+    const member = subscriptions.find(s => s.id === id);
+    if (!member) return;
+
+    isEditing = true;
+    adminElements.modalTitle.textContent = 'Edit Member';
+    adminElements.memberId.value = member.id;
+    adminElements.memberEmail.value = member.email;
+    adminElements.memberName.value = member.profileName || '';
+    adminElements.memberPin.value = member.pin || '';
+    adminElements.memberDue.value = member.dueDate;
+    adminElements.memberNotes.value = member.notes || '';
+    adminElements.memberSlotNumber.value = member.slotNumber || '';
+    adminElements.memberIsSlotOwner.value = member.isSlotOwner || 'true';
+
+    // Set profile type
+    const profileType = member.profileType || 'private';
+    document.querySelector(`input[name="profile-type"][value="${profileType}"]`).checked = true;
+
+    // For editing, hide slot selection (can't change slot)
+    if (adminElements.slotSelectionGroup) {
+        adminElements.slotSelectionGroup.style.display = 'none';
+    }
+
+    // Show/hide PIN based on isSlotOwner
+    const isOwner = member.isSlotOwner !== false && member.isSlotOwner !== 'false';
+    showPinInput(isOwner || profileType === 'private');
+
+    adminElements.modalOverlay.classList.add('show');
+}
+
+function closeModal() {
+    adminElements.modalOverlay.classList.remove('show');
+}
+
+function getDefaultDueDate() {
+    const date = new Date();
+    date.setMonth(date.getMonth() + 1);
+    return date.toISOString().split('T')[0];
+}
+
+async function handleSubmit(event) {
+    event.preventDefault();
+
+    const profileType = document.querySelector('input[name="profile-type"]:checked').value;
+    const price = profileType === 'sharing' ? 25000 : 50000;
+
+    const data = {
+        id: adminElements.memberId.value || generateId(),
+        email: adminElements.memberEmail.value,
+        profileName: adminElements.memberName.value,
+        pin: adminElements.memberPin.value,
+        dueDate: adminElements.memberDue.value,
+        notes: adminElements.memberNotes.value,
+        profileType: profileType,
+        slotNumber: adminElements.memberSlotNumber.value || '',
+        isSlotOwner: adminElements.memberIsSlotOwner.value || 'true',
+        price: price
+    };
+
+    // Show loading
+    adminElements.submitBtn.disabled = true;
+    adminElements.submitText.style.display = 'none';
+    adminElements.submitSpinner.style.display = 'block';
+
+    try {
+        const action = isEditing ? 'updateSubscription' : 'addSubscription';
+        // Use GET with URL params to avoid CORS issues
+        const params = new URLSearchParams({
+            action: action,
+            id: data.id,
+            email: data.email,
+            name: data.profileName,
+            pin: data.pin || '',
+            dueDate: data.dueDate,
+            notes: data.notes || '',
+            profileType: data.profileType,
+            slotNumber: data.slotNumber || '',
+            isSlotOwner: data.isSlotOwner || 'true',
+            price: data.price
+        });
+
+        const response = await fetch(`${ADMIN_CONFIG.API_URL}?${params.toString()}`);
+        const result = await response.json();
+
+        if (result.success) {
+            showToast(isEditing ? 'Member berhasil diupdate!' : 'Member berhasil ditambahkan!');
+            closeModal();
+            loadSubscriptions();
+        } else {
+            throw new Error(result.error || 'Gagal menyimpan data');
+        }
+    } catch (error) {
+        console.error('Submit error:', error);
+        showToast('Gagal menyimpan data: ' + error.message, true);
+    } finally {
+        adminElements.submitBtn.disabled = false;
+        adminElements.submitText.style.display = 'block';
+        adminElements.submitSpinner.style.display = 'none';
+    }
+}
+
+async function deleteMember(id) {
+    showConfirm(id);
+}
+
+function showConfirm(id) {
+    const overlay = document.getElementById('confirm-overlay');
+    const deleteBtn = document.getElementById('confirm-delete-btn');
+
+    overlay.classList.add('show');
+
+    deleteBtn.onclick = async function () {
+        hideConfirm();
+        await performDelete(id);
+    };
+}
+
+function hideConfirm() {
+    document.getElementById('confirm-overlay').classList.remove('show');
+}
+
+async function performDelete(id) {
+    try {
+        const response = await fetch(`${ADMIN_CONFIG.API_URL}?action=deleteSubscription&id=${id}`);
+        const result = await response.json();
+
+        if (result.success) {
+            showToast('Member berhasil dihapus!');
+            loadSubscriptions();
+        } else {
+            throw new Error(result.error || 'Gagal menghapus');
+        }
+    } catch (error) {
+        console.error('Delete error:', error);
+        showToast('Gagal menghapus: ' + error.message, true);
+    }
+}
+
+function showInfo(id) {
+    const member = subscriptions.find(s => s.id === id);
+    if (!member) return;
+
+    const dueInfo = getDueInfo(member.dueDate);
+    const waMessage = getWhatsAppMessage(member);
+    const isSharing = member.profileType === 'sharing';
+    const price = member.price || (isSharing ? 25000 : 50000);
+    const isOwner = member.isSlotOwner !== false && member.isSlotOwner !== 'false';
+
+    // Find slot partner if sharing
+    let slotPartnerHtml = '';
+    if (isSharing) {
+        const slotPartner = subscriptions.find(s =>
+            s.email === member.email &&
+            s.profileType === 'sharing' &&
+            s.slotNumber === member.slotNumber &&
+            s.id !== member.id
+        );
+
+        if (slotPartner) {
+            slotPartnerHtml = `
+                <div class="info-section-divider"></div>
+                <div class="info-section-title">Partner Slot</div>
+                <div class="info-item">
+                    <span class="info-label">Nama</span>
+                    <span class="info-value">${escapeHtml(slotPartner.profileName)}</span>
+                </div>
+            `;
+        } else {
+            slotPartnerHtml = `
+                <div class="info-section-divider"></div>
+                <div class="info-section-title">Partner Slot</div>
+                <div class="info-item">
+                    <span class="info-label">Status</span>
+                    <span class="info-value" style="color: #22c55e;">Slot tersedia untuk 1 orang lagi</span>
+                </div>
+            `;
+        }
+    }
+
+    const infoContent = `
+        <div class="info-modal-content">
+            <div class="info-item">
+                <span class="info-label">Tipe Profil</span>
+                <span class="profile-type-badge ${isSharing ? 'sharing' : 'private'}">${isSharing ? '👥 Sharing' : '👤 Private'}</span>
+            </div>
+            ${isSharing ? `
+            <div class="info-item">
+                <span class="info-label">Slot</span>
+                <span class="info-value">Slot ${member.slotNumber || 1}${isOwner ? ' (Owner)' : ''}</span>
+            </div>
+            ` : ''}
+            <div class="info-item">
+                <span class="info-label">Harga</span>
+                <span class="info-value">${isSharing ? 'Rp25.000/orang' : 'Rp50.000'}</span>
+            </div>
+            <div class="info-section-divider"></div>
+            <div class="info-item">
+                <span class="info-label">Email Netflix</span>
+                <span class="info-value">${escapeHtml(member.email)}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Nama</span>
+                <span class="info-value">${escapeHtml(member.profileName || '-')}</span>
+            </div>
+            ${isOwner || !isSharing ? `
+            <div class="info-item">
+                <span class="info-label">PIN Profil</span>
+                <span class="info-value">${escapeHtml(member.pin || '-')}</span>
+            </div>
+            ` : ''}
+            <div class="info-item">
+                <span class="info-label">Catatan</span>
+                <span class="info-value">${escapeHtml(member.notes || '-')}</span>
+            </div>
+            ${slotPartnerHtml}
+            <div class="info-section-divider"></div>
+            <div class="info-item">
+                <span class="info-label">Jatuh Tempo</span>
+                <span class="info-value">${formatDate(member.dueDate)}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Status</span>
+                <span class="status-badge ${dueInfo.class === 'due-overdue' || dueInfo.class === 'due-today' ? 'unpaid' : 'paid'}">${dueInfo.text || 'Dibayar'}</span>
+            </div>
+        </div>
+        <div class="info-actions">
+            <a href="https://wa.me/?text=${waMessage}" target="_blank" class="whatsapp-btn">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                    </svg>
+                Share ke WhatsApp
+            </a>
+        </div>
+    `;
+
+    document.getElementById('info-modal-body').innerHTML = infoContent;
+    document.getElementById('info-overlay').classList.add('show');
+}
+
+function hideInfo() {
+    document.getElementById('info-overlay').classList.remove('show');
+}
+
+function getWhatsAppMessage(member) {
+    return encodeURIComponent(
+        `*BILLING REMINDER*\n\n` +
+        `Halo Kak,\n` +
+        `Masa aktif Netflix untuk profil *${member.profileName || '-'}* akan segera berakhir pada *${formatDate(member.dueDate)}*.\n\n` +
+        `Mohon segera melakukan pembayaran untuk perpanjangan.`
+    );
+}
+
+function shareWhatsApp(id) {
+    const member = subscriptions.find(s => s.id === id);
+    if (!member) return;
+
+    const waMessage = getWhatsAppMessage(member);
+
+    window.open(`https://wa.me/?text=${waMessage}`, '_blank');
+}
+
+async function markAsPaid(id) {
+    if (!confirm('Tandai sudah bayar? Jatuh tempo akan ditambah 1 bulan.')) return;
+
+    try {
+        const response = await fetch(`${ADMIN_CONFIG.API_URL}?action=markAsPaid&id=${id}`);
+        const result = await response.json();
+
+        if (result.success) {
+            showToast(`✅ Pembayaran dicatat! Jatuh tempo baru: ${formatDate(result.newDueDate)}`);
+            loadSubscriptions();
+        } else {
+            throw new Error(result.error || 'Gagal menyimpan');
+        }
+    } catch (error) {
+        console.error('Payment error:', error);
+        showToast('Gagal menyimpan: ' + error.message, true);
+    }
+}
+
+// ============================================
+// Utility Functions
+// ============================================
+
+function generateId() {
+    return 'sub_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function showToast(message, isError = false) {
+    adminElements.toastMessage.textContent = message;
+    adminElements.toast.classList.remove('error');
+    if (isError) {
+        adminElements.toast.classList.add('error');
+    }
+    adminElements.toast.classList.add('show');
+    setTimeout(() => {
+        adminElements.toast.classList.remove('show');
+    }, 3000);
+}
+
+// ============================================
+// Calendar Functions
+// ============================================
+
+function setView(view) {
+    currentView = view;
+    const listContainer = document.getElementById('subscriptions-container');
+    const calendarContainer = document.getElementById('calendar-container');
+    const listBtn = document.getElementById('list-view-btn');
+    const calendarBtn = document.getElementById('calendar-view-btn');
+
+    if (view === 'list') {
+        listContainer.style.display = 'block';
+        calendarContainer.style.display = 'none';
+        listBtn.classList.add('active');
+        calendarBtn.classList.remove('active');
+    } else {
+        listContainer.style.display = 'none';
+        calendarContainer.style.display = 'block';
+        listBtn.classList.remove('active');
+        calendarBtn.classList.add('active');
+        renderCalendar();
+    }
+}
+
+function changeMonth(delta) {
+    calendarDate.setMonth(calendarDate.getMonth() + delta);
+    renderCalendar();
+}
+
+function renderCalendar() {
+    const year = calendarDate.getFullYear();
+    const month = calendarDate.getMonth();
+
+    // Update header
+    const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+    document.getElementById('calendar-month-year').textContent = `${monthNames[month]} ${year}`;
+
+    // Build due dates map
+    const dueDatesMap = {};
+    subscriptions.forEach(sub => {
+        const dueDate = sub.dueDate;
+        if (!dueDatesMap[dueDate]) {
+            dueDatesMap[dueDate] = [];
+        }
+        dueDatesMap[dueDate].push(sub);
+    });
+
+    // Calculate calendar days
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const startPadding = firstDay.getDay(); // 0 = Sunday
+    const totalDays = lastDay.getDate();
+
+    // Build grid HTML
+    let html = `
+        <div class="calendar-day-header">Min</div>
+        <div class="calendar-day-header">Sen</div>
+        <div class="calendar-day-header">Sel</div>
+        <div class="calendar-day-header">Rab</div>
+        <div class="calendar-day-header">Kam</div>
+        <div class="calendar-day-header">Jum</div>
+        <div class="calendar-day-header">Sab</div>
+    `;
+
+    // Empty cells for padding
+    for (let i = 0; i < startPadding; i++) {
+        html += `<div class="calendar-day empty"></div>`;
+    }
+
+    // Day cells
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    for (let day = 1; day <= totalDays; day++) {
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const currentDate = new Date(year, month, day);
+        const isToday = currentDate.getTime() === today.getTime();
+        const hasDue = dueDatesMap[dateStr];
+
+        let classes = 'calendar-day';
+        if (isToday) classes += ' today';
+        if (hasDue) {
+            // Check if soon (within 3 days from today)
+            const diffDays = Math.ceil((currentDate - today) / (1000 * 60 * 60 * 24));
+            if (diffDays >= 0 && diffDays <= 3) {
+                classes += ' has-due due-soon';
+            } else if (diffDays < 0) {
+                classes += ' has-due due-overdue';
+            } else {
+                classes += ' has-due';
+            }
+        }
+
+        let tooltip = '';
+        if (hasDue) {
+            const names = hasDue.map(s => s.profileName).join(', ');
+            tooltip = `title="${hasDue.length} jatuh tempo: ${names}"`;
+        }
+
+        html += `
+            <div class="${classes}" ${tooltip}>
+                <span class="day-number">${day}</span>
+                ${hasDue ? `<span class="due-count">${hasDue.length}</span>` : ''}
+            </div>
+        `;
+    }
+
+    document.getElementById('calendar-grid').innerHTML = html;
+}
+
+// ============================================
+// Initialize
+// ============================================
+
+// Check if already logged in
+if (sessionStorage.getItem(ADMIN_CONFIG.SESSION_KEY)) {
+    showDashboard();
+    loadSubscriptions();
+} else {
+    showLogin();
+}
