@@ -776,13 +776,14 @@ function showInfo(id) {
     if (!member) return;
 
     const dueInfo = getDueInfo(member.dueDate);
-    const waMessage = getProfileDetailMessage(member);
     const isSharing = member.profileType === 'sharing';
     const price = member.price || (isSharing ? 25000 : 50000);
     const isOwner = member.isSlotOwner !== false && member.isSlotOwner !== 'false';
 
     // Find slot partner if sharing
     let slotPartnerHtml = '';
+    let effectivePin = member.pin; // Default to own PIN logic
+
     if (isSharing) {
         const slotPartner = subscriptions.find(s =>
             s.email === member.email &&
@@ -790,6 +791,19 @@ function showInfo(id) {
             s.slotNumber === member.slotNumber &&
             s.id !== member.id
         );
+
+        // If not owner, try to find owner's PIN
+        if (!isOwner) {
+            const owner = subscriptions.find(s =>
+                s.email === member.email &&
+                s.profileType === 'sharing' &&
+                s.slotNumber === member.slotNumber &&
+                (s.isSlotOwner !== false && s.isSlotOwner !== 'false')
+            );
+            if (owner && owner.pin) {
+                effectivePin = owner.pin;
+            }
+        }
 
         if (slotPartner) {
             slotPartnerHtml = `
@@ -811,6 +825,8 @@ function showInfo(id) {
             `;
         }
     }
+
+    const waMessage = getProfileDetailMessage(member, effectivePin);
 
     const infoContent = `
         <div class="info-modal-content">
@@ -837,12 +853,10 @@ function showInfo(id) {
                 <span class="info-label">Nama</span>
                 <span class="info-value">${escapeHtml(member.profileName || '-')}</span>
             </div>
-            ${isOwner || !isSharing ? `
             <div class="info-item">
                 <span class="info-label">PIN Profil</span>
-                <span class="info-value">${escapeHtml(member.pin || '-')}</span>
+                <span class="info-value">${escapeHtml(effectivePin || '-')}</span>
             </div>
-            ` : ''}
             <div class="info-item">
                 <span class="info-label">Catatan</span>
                 <span class="info-value">${escapeHtml(member.notes || '-')}</span>
@@ -885,7 +899,7 @@ function getWhatsAppMessage(member) {
     );
 }
 
-function getProfileDetailMessage(member) {
+function getProfileDetailMessage(member, effectivePin) {
     // Format date specifically for this message: "6 Februari 2026"
     const dueDateObj = new Date(member.dueDate);
     const options = { day: 'numeric', month: 'long', year: 'numeric' };
@@ -896,7 +910,7 @@ function getProfileDetailMessage(member) {
         `Berikut informasi akun Netflix yang baru saja Kakak order:\n\n` +
         `Email: ${member.email}\n` +
         `Password: ${netflixPassword}\n` +
-        `PIN Profil: ${member.pin || '-'}\n` +
+        `PIN Profil: ${effectivePin || '-'}\n` +
         `Akun aktif hingga: ${formattedDate}\n\n` +
         `Jika nanti Kakak membutuhkan kode OTP atau ingin memperbarui pengaturan Household, Kakak bisa langsung mengakses server otomatis kami yang beroperasi 24 jam di:\n` +
         `https://harisdevlab.online/netflixhub/\n\n` +
