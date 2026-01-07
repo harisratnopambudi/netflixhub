@@ -876,9 +876,11 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 32px;
-    background: transparent;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    flex-shrink: 0;
+    background: var(--bg-secondary);
     border: 1px solid var(--border-color);
     border-radius: 6px;
     color: var(--text-secondary);
@@ -901,8 +903,8 @@ body {
 }
 
 .action-btn svg {
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
 }
 
 /* ===== Modal ===== */
@@ -1193,6 +1195,10 @@ body {
     text-align: center;
 }
 
+.member-row.header>div:first-child {
+    text-align: left;
+}
+
 .member-row.header:hover {
     background: var(--bg-secondary);
 }
@@ -1300,18 +1306,7 @@ body {
     justify-content: flex-end;
 }
 
-.action-btn {
-    width: 30px;
-    height: 30px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    font-size: 0.875rem;
-    cursor: pointer;
-}
+
 
 .action-btn:hover {
     background: var(--bg-card-hover);
@@ -1453,7 +1448,7 @@ body {
 /* Mobile responsive for member rows */
 @media (max-width: 768px) {
     .member-row {
-        grid-template-columns: 1fr 1fr 1fr 50px;
+        grid-template-columns: 1.5fr 1fr 0.8fr 140px;
         gap: 8px;
         padding: 8px 12px;
     }
@@ -1485,9 +1480,14 @@ body {
     }
 
     .action-btn {
-        width: 22px;
-        height: 22px;
-        font-size: 0.65rem;
+        width: 30px;
+        height: 30px;
+        font-size: 0.8rem;
+    }
+
+    .action-btn svg {
+        width: 15px;
+        height: 15px;
     }
 
     .member-date {
@@ -1498,11 +1498,7 @@ body {
         font-size: 0.65rem;
     }
 
-    .action-btn {
-        width: 24px;
-        height: 24px;
-        font-size: 0.7rem;
-    }
+
 
     .email-group-header {
         padding: 10px 12px;

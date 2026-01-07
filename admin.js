@@ -396,7 +396,7 @@ function createSubscriptionRow(sub) {
     if (isSharing) {
         const slotNum = sub.slotNumber || 1;
         const ownerText = isOwner ? ' · Owner' : '';
-        slotBadge = `<span class="slot-badge">Slot ${slotNum}${ownerText}</span>`;
+        slotBadge = `<span class="slot-badge">Profil ${slotNum}${ownerText}</span>`;
     }
 
     const displayName = escapeHtml(sub.profileName);
