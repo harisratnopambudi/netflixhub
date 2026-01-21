@@ -127,11 +127,39 @@ function updateStatus(status, text) {
     }
 }
 
+const LOADING_MESSAGES = [
+    "Lagi nyiapin popcorn, tunggu bentar ya... 🍿",
+    "Sabar, lagi nyari remote yang nyelip di sofa... 🛋️",
+    "Siapin posisi rebahan paling nyaman dulu... 🛌",
+    "Lagi loading... jangan di-skip kayak intro series ya! ⏩",
+    "Bentar, lagi nego sama sinyal internet... 📡",
+    "Sabar ya, daripada nunggu kepastian dari dia... 🤪",
+    "Lagi manasin mesin server, biar ngebut... 🔥",
+    "Tahan napas... eh jangan deng, nanti pingsan. Tunggu ya! 😮‍💨",
+    "Mencari hilal data Netflix... 🔭",
+    "Loading... semoga lebih cepet dari kurir paket 📦",
+    "Lagi nyeduh kopi buat servernya... ☕",
+    "Jangan kedip, nanti ketinggalan... (canda deng, masih loading) 👁️",
+    "Sabar, orang sabar disayang Tuhan (dan pacar orang)... 🤭",
+    "Lagi download kesabaran ekstra... ⏳",
+    "Bentar, adminnya lagi ke kamar mandi... 🚽",
+    "Data lagi OTW, naik ojek online... 🛵",
+    "Lagi ngitung kancing... satu, dua, tiga... 👕",
+    "Menunggu itu berat, biar aku saja (server)... 🏋️",
+    "Lagi briefing sama semut-semut kabel... 🐜",
+    "Tenang, ini bukan nge-lag, cuma lagi estetik... ✨"
+];
+
 /**
  * Show loading state
  */
 function showLoading() {
     if (elements.loadingState) {
+        // Randomize text
+        const msgElement = elements.loadingState.querySelector('p');
+        if (msgElement) {
+            msgElement.textContent = LOADING_MESSAGES[Math.floor(Math.random() * LOADING_MESSAGES.length)];
+        }
         elements.loadingState.classList.remove('hidden');
         elements.loadingState.classList.add('flex');
     }
