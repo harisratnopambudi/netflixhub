@@ -1,0 +1,5 @@
+# Ignore Google Apps Script (edit local only, don't deploy to GitHub)
+google-apps-script/
+google-apps-script.js
+google-apps-script.txt
+autopilot_script.gs
