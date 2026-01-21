@@ -206,7 +206,7 @@ function renderCards(data, searchQuery = '') {
                 fullEmail: item.to || '',
                 subject: item.subject || 'Konfirmasi Update Rumah Netflix',
                 link: item.link,
-                requester: item.requester || (account.toLowerCase().includes('2') ? { name: 'Cecilia', device: 'Xiaomi - Smart TV' } : null),
+                requester: item.requester || (account.toLowerCase().includes('2') ? { name: 'Cecilia', device: 'Samsung - Smart TV' } : null),
                 date: item.date,
                 sortDate: new Date(item.date)
             });
