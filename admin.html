@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html class="dark" lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Netflix Access Hub</title>
+    <link rel="icon" type="image/x-icon" href="https://netflix.com/favicon.ico">
+
+    <!-- Security Meta Tags -->
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
+    <meta name="robots" content="noindex, nofollow">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#e50914",
+                        "primary-dark": "#b20710",
+                        "background-dark": "#0a0a0a",
+                        "surface-dark": "#141414",
+                        "surface-hover": "#1f1f1f",
+                        "netflix-gray": "#b3b3b3",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"],
+                    },
+                }
+            }
+        }
+    </script>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet">
+
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0a0a0a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #444;
+        }
+
+        .glass-panel {
+            background: rgba(20, 20, 20, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .spinner {
+            animation: spin 1s linear infinite;
+        }
+
+        /* Modal styles */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(4px);
+            z-index: 100;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        /* Calendar Styles */
+        .calendar-day-header {
+            text-align: center;
+            font-size: 0.75rem;
+            color: #b3b3b3;
+            font-weight: 500;
+            padding: 0.5rem 0;
+        }
+
+        .calendar-day {
+            aspect-ratio: 1;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 0.5rem;
+            padding: 0.25rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .calendar-day:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .calendar-day.empty {
+            background: transparent;
+            border: none;
+            cursor: default;
+        }
+
+        .calendar-day.today {
+            background: rgba(229, 9, 20, 0.1);
+            border-color: rgba(229, 9, 20, 0.3);
+        }
+
+        .calendar-day .day-number {
+            font-size: 0.75rem;
+            color: #b3b3b3;
+        }
+
+        .calendar-day.today .day-number {
+            color: #e50914;
+            font-weight: bold;
+        }
+
+        .calendar-day.has-due {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .due-count {
+            margin-top: auto;
+            background: #333;
+            color: white;
+            font-size: 0.65rem;
+            font-weight: bold;
+            padding: 0.1rem 0.4rem;
+            border-radius: 99px;
+        }
+
+        .calendar-day.due-soon .due-count {
+            background: #eab308;
+            color: black;
+        }
+
+        .calendar-day.due-overdue .due-count {
+            background: #ef4444;
+            color: white;
+        }
+
+        /* Active State for View Toggle Buttons */
+        button.active {
+            background: rgba(255, 255, 255, 0.1) !important;
+            color: white !important;
+            border-color: rgba(255, 255, 255, 0.2) !important;
+        }
+    </style>
+</head>
+
+<body class="bg-background-dark text-white font-display min-h-screen flex flex-col antialiased">
+
+    <!-- Background Glow -->
+    <div
+        class="fixed top-0 left-0 w-full h-[400px] bg-gradient-to-b from-primary/10 to-transparent pointer-events-none z-0">
+    </div>
+
+    <!-- Header -->
+    <header class="sticky top-0 z-50 w-full glass-panel">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6">
+            <div class="flex items-center justify-between h-14">
+                <a href="index.html" class="flex items-center gap-2">
+                    <span class="text-primary text-xl font-bold tracking-tight">NETFLIX</span>
+                    <span class="text-white/20 text-xl font-light">|</span>
+                    <span class="text-netflix-gray text-sm font-medium uppercase">Admin</span>
+                </a>
+                <button id="logout-btn" onclick="logout()" style="display: none;"
+                    class="flex items-center gap-1.5 px-3 py-1.5 text-xs text-netflix-gray hover:text-white border border-white/10 hover:border-primary/50 rounded-md transition-all">
+                    <span class="material-symbols-outlined text-[16px]">logout</span>
+                    Logout
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main -->
+    <main class="flex-1 relative z-10 py-6 px-4 sm:px-6 max-w-6xl mx-auto w-full">
+
+        <!-- Login Section -->
+        <div id="login-section" class="flex items-center justify-center min-h-[400px]">
+            <div class="w-full max-w-sm p-6 bg-surface-dark rounded-xl border border-white/5">
+                <div class="text-center mb-6">
+                    <span class="material-symbols-outlined text-4xl text-primary mb-2">lock</span>
+                    <h2 class="text-xl font-bold">Admin Access</h2>
+                    <p class="text-sm text-netflix-gray mt-1">Masukkan password untuk akses</p>
+                </div>
+                <form onsubmit="handleLogin(event)">
+                    <input type="password" id="password-input" placeholder="Password" required
+                        class="w-full px-4 py-3 bg-background-dark border border-white/10 rounded-lg text-white placeholder-netflix-gray/50 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none mb-4">
+                    <button type="submit" id="login-btn"
+                        class="w-full py-3 bg-primary hover:bg-primary-dark text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2">
+                        <span id="login-text">Login</span>
+                        <div id="login-spinner"
+                            class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full spinner"
+                            style="display:none;"></div>
+                    </button>
+                    <p id="login-error" class="text-primary text-sm text-center mt-3"></p>
+                </form>
+            </div>
+        </div>
+
+        <!-- Dashboard Section -->
+        <div id="dashboard-section" style="display: none;">
+            <!-- Title -->
+            <div class="mb-6">
+                <h1 class="text-xl font-bold">Netflix Subscriptions</h1>
+                <p class="text-sm text-netflix-gray">Kelola member dan jatuh tempo langganan</p>
+            </div>
+
+            <!-- Stats Cards -->
+            <div id="revenue-stats" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
+                <div class="p-3 bg-surface-dark rounded-lg border border-white/5">
+                    <div class="text-[10px] text-netflix-gray uppercase tracking-wider">Total</div>
+                    <div class="text-lg font-bold" id="stat-total-members">0</div>
+                </div>
+                <div class="p-3 bg-surface-dark rounded-lg border border-white/5">
+                    <div class="text-[10px] text-netflix-gray uppercase tracking-wider">Private</div>
+                    <div class="text-lg font-bold" id="stat-private">0</div>
+                </div>
+                <div class="p-3 bg-surface-dark rounded-lg border border-white/5">
+                    <div class="text-[10px] text-netflix-gray uppercase tracking-wider">Sharing</div>
+                    <div class="text-lg font-bold" id="stat-sharing">0</div>
+                </div>
+                <div class="p-3 bg-surface-dark rounded-lg border-l-4 border-l-green-500 border border-white/5">
+                    <div class="text-[10px] text-green-400 uppercase tracking-wider">Pendapatan</div>
+                    <div class="text-lg font-bold text-green-400" id="stat-income">Rp0</div>
+                </div>
+                <div class="p-3 bg-surface-dark rounded-lg border-l-4 border-l-blue-500 border border-white/5">
+                    <div class="text-[10px] text-blue-400 uppercase tracking-wider">Profit</div>
+                    <div class="text-lg font-bold text-blue-400" id="stat-profit">Rp0</div>
+                </div>
+            </div>
+
+            <!-- Action Bar -->
+            <div class="flex items-center justify-between gap-3 mb-4">
+                <button onclick="showAddModal()"
+                    class="flex items-center gap-1.5 px-3 py-2 bg-primary hover:bg-primary-dark text-white text-xs font-semibold rounded-lg transition-colors">
+                    <span class="material-symbols-outlined text-[16px]">add</span>
+                    Tambah
+                </button>
+                <div class="flex items-center gap-2">
+                    <button id="list-view-btn" onclick="setView('list')"
+                        class="active p-2 rounded-lg text-netflix-gray hover:text-white border border-white/10 hover:bg-white/5 transition-colors">
+                        <span class="material-symbols-outlined text-[18px]">list</span>
+                    </button>
+                    <button id="calendar-view-btn" onclick="setView('calendar')"
+                        class="p-2 rounded-lg text-netflix-gray hover:text-white border border-white/10 hover:bg-white/5 transition-colors">
+                        <span class="material-symbols-outlined text-[18px]">calendar_month</span>
+                    </button>
+                    <button onclick="loadSubscriptions()"
+                        class="p-2 rounded-lg text-netflix-gray hover:text-white border border-white/10 hover:bg-white/5">
+                        <span class="material-symbols-outlined text-[18px]">sync</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- List View -->
+            <div id="subscriptions-container" class="space-y-2">
+                <div class="flex flex-col items-center justify-center py-12 text-netflix-gray">
+                    <div class="w-8 h-8 border-3 border-white/10 border-t-primary rounded-full spinner mb-3"></div>
+                    <p class="text-sm">Memuat data...</p>
+                </div>
+            </div>
+
+            <!-- Calendar View -->
+            <div id="calendar-container" style="display: none;"
+                class="bg-surface-dark rounded-lg border border-white/5 p-4">
+                <div class="flex items-center justify-between mb-4">
+                    <button onclick="changeMonth(-1)" class="p-2 text-netflix-gray hover:text-white">
+                        <span class="material-symbols-outlined">chevron_left</span>
+                    </button>
+                    <h3 id="calendar-month-year" class="text-lg font-semibold">Januari 2026</h3>
+                    <button onclick="changeMonth(1)" class="p-2 text-netflix-gray hover:text-white">
+                        <span class="material-symbols-outlined">chevron_right</span>
+                    </button>
+                </div>
+                <div id="calendar-grid" class="grid grid-cols-7 gap-1 text-center text-sm"></div>
+                <div class="flex items-center justify-center gap-4 mt-4 text-xs text-netflix-gray">
+                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                        Segera</span>
+                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                        Normal</span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-white/5 py-4 mt-auto">
+        <p class="text-center text-xs text-netflix-gray/50">©2025 Netflix Access Hub</p>
+    </footer>
+
+    <!-- Payment Modal -->
+    <div class="modal-overlay" id="payment-modal-overlay">
+        <div class="w-full max-w-sm p-5 bg-surface-dark rounded-xl border border-white/10"
+            onclick="event.stopPropagation()">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-semibold">Set Tanggal Bayar</h3>
+                <button onclick="closePaymentModal()" class="text-netflix-gray hover:text-white">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <form id="payment-form" onsubmit="handlePaymentSubmit(event)">
+                <input type="hidden" id="payment-email">
+                <label class="block text-xs text-netflix-gray mb-1">Tanggal Bayar Netflix</label>
+                <input type="date" id="payment-date" required
+                    class="w-full px-3 py-2 bg-background-dark border border-white/10 rounded-lg text-white focus:border-primary focus:outline-none mb-4">
+                <div class="flex gap-2">
+                    <button type="button" onclick="closePaymentModal()"
+                        class="flex-1 py-2 border border-white/10 text-netflix-gray hover:text-white rounded-lg text-sm">Batal</button>
+                    <button type="submit"
+                        class="flex-1 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg text-sm font-semibold">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div class="modal-overlay" id="modal-overlay" onclick="closeModal()">
+        <div class="w-full max-w-md max-h-[90vh] overflow-y-auto p-5 bg-surface-dark rounded-xl border border-white/10"
+            onclick="event.stopPropagation()">
+            <div class="flex items-center justify-between mb-4">
+                <h3 id="modal-title" class="font-semibold">Tambah Member</h3>
+                <button onclick="closeModal()" class="text-netflix-gray hover:text-white">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <form id="member-form" onsubmit="handleSubmit(event)" class="space-y-4">
+                <input type="hidden" id="member-id">
+                <input type="hidden" id="member-slot-number">
+                <input type="hidden" id="member-is-slot-owner">
+
+                <div>
+                    <label class="block text-xs text-netflix-gray mb-1">Email Netflix</label>
+                    <input type="email" id="member-email" placeholder="user@gmail.com" required
+                        class="w-full px-3 py-2 bg-background-dark border border-white/10 rounded-lg text-white placeholder-netflix-gray/50 focus:border-primary focus:outline-none">
+                </div>
+
+                <!-- Profile Type -->
+                <div>
+                    <label class="block text-xs text-netflix-gray mb-2">Tipe Profil</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <label class="cursor-pointer">
+                            <input type="radio" name="profile-type" value="private" checked
+                                onchange="toggleProfileType()" class="hidden peer">
+                            <div
+                                class="p-3 bg-background-dark border border-white/10 rounded-lg text-center peer-checked:border-primary peer-checked:bg-primary/10 transition-all">
+                                <div class="text-lg mb-1">👤</div>
+                                <div class="text-sm font-semibold">Private</div>
+                                <div class="text-[10px] text-netflix-gray">Rp50.000</div>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="profile-type" value="sharing" onchange="toggleProfileType()"
+                                class="hidden peer">
+                            <div
+                                class="p-3 bg-background-dark border border-white/10 rounded-lg text-center peer-checked:border-primary peer-checked:bg-primary/10 transition-all">
+                                <div class="text-lg mb-1">👥</div>
+                                <div class="text-sm font-semibold">Sharing</div>
+                                <div class="text-[10px] text-netflix-gray">Rp25.000/org</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Slot Selection -->
+                <div id="slot-selection-group" style="display: none;">
+                    <label class="block text-xs text-netflix-gray mb-2">Pilih Slot</label>
+                    <div id="slot-options" class="grid grid-cols-4 gap-2"></div>
+                </div>
+
+                <div>
+                    <label class="block text-xs text-netflix-gray mb-1">Nama Member</label>
+                    <input type="text" id="member-name" placeholder="contoh: Andi" required
+                        class="w-full px-3 py-2 bg-background-dark border border-white/10 rounded-lg text-white placeholder-netflix-gray/50 focus:border-primary focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs text-netflix-gray mb-1">No. WhatsApp</label>
+                    <input type="tel" id="member-phone" placeholder="08123456789" required
+                        class="w-full px-3 py-2 bg-background-dark border border-white/10 rounded-lg text-white placeholder-netflix-gray/50 focus:border-primary focus:outline-none">
+                </div>
+                <div id="pin-group">
+                    <label class="block text-xs text-netflix-gray mb-1">PIN Profil</label>
+                    <input type="text" id="member-pin" placeholder="1234" maxlength="10"
+                        class="w-full px-3 py-2 bg-background-dark border border-white/10 rounded-lg text-white placeholder-netflix-gray/50 focus:border-primary focus:outline-none">
+                    <small id="pin-hint" class="text-[10px] text-netflix-gray" style="display:none;">PIN sama dengan
+                        slot owner</small>
+                </div>
+                <div>
+                    <label class="block text-xs text-netflix-gray mb-1">Jatuh Tempo</label>
+                    <input type="date" id="member-due" required
+                        class="w-full px-3 py-2 bg-background-dark border border-white/10 rounded-lg text-white focus:border-primary focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs text-netflix-gray mb-1">Catatan (opsional)</label>
+                    <textarea id="member-notes" placeholder="Info tambahan..."
+                        class="w-full px-3 py-2 bg-background-dark border border-white/10 rounded-lg text-white placeholder-netflix-gray/50 focus:border-primary focus:outline-none resize-none h-20"></textarea>
+                </div>
+
+                <div class="flex gap-2 pt-2">
+                    <button type="button" onclick="closeModal()"
+                        class="flex-1 py-2.5 border border-white/10 text-netflix-gray hover:text-white rounded-lg text-sm">Batal</button>
+                    <button type="submit" id="submit-btn"
+                        class="flex-1 py-2.5 bg-primary hover:bg-primary-dark text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2">
+                        <span id="submit-text">Simpan</span>
+                        <div id="submit-spinner"
+                            class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full spinner"
+                            style="display:none;"></div>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Info Modal -->
+    <div class="modal-overlay" id="info-overlay" onclick="hideInfo()">
+        <div class="w-full max-w-sm p-5 bg-surface-dark rounded-xl border border-white/10"
+            onclick="event.stopPropagation()">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-semibold">Detail Profil</h3>
+                <button onclick="hideInfo()" class="text-netflix-gray hover:text-white">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <div id="info-modal-body" class="text-sm space-y-2"></div>
+        </div>
+    </div>
+
+    <!-- Confirm Modal -->
+    <div class="modal-overlay" id="confirm-overlay">
+        <div class="w-full max-w-xs p-5 bg-surface-dark rounded-xl border border-white/10 text-center">
+            <span class="material-symbols-outlined text-5xl text-primary mb-3">warning</span>
+            <h3 class="font-semibold mb-2">Hapus Profil?</h3>
+            <p id="confirm-message" class="text-sm text-netflix-gray mb-4">Data akan dihapus permanen.</p>
+            <div class="flex gap-2">
+                <button onclick="hideConfirm()"
+                    class="flex-1 py-2 border border-white/10 text-netflix-gray hover:text-white rounded-lg text-sm">Batal</button>
+                <button id="confirm-delete-btn"
+                    class="flex-1 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg text-sm font-semibold">Hapus</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast"
+        class="fixed bottom-6 left-1/2 -translate-x-1/2 translate-y-24 opacity-0 transition-all duration-300 z-50 px-4 py-2.5 bg-green-600 text-white text-sm rounded-lg shadow-xl">
+        <span id="toast-message">Berhasil!</span>
+    </div>
+
+    <script src="admin.js?v=20260120-03"></script>
+</body>
+
+</html>

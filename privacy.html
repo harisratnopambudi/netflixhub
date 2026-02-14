@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html class="dark" lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kebijakan Privasi - Netflix Access Hub</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#e50914",
+                        "primary-dark": "#b20710",
+                        "background-dark": "#0a0a0a",
+                        "surface-dark": "#141414",
+                        "netflix-gray": "#b3b3b3",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"],
+                    },
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .glass-panel {
+            background: rgba(20, 20, 20, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+    </style>
+</head>
+
+<body class="bg-background-dark text-white font-display min-h-screen flex flex-col antialiased">
+    <!-- Header -->
+    <header class="sticky top-0 z-50 w-full glass-panel border-b-0 border-white/5">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <a href="index.html" class="flex items-center gap-3">
+                    <span class="text-primary text-2xl font-bold tracking-tight">NETFLIX</span>
+                    <span class="text-white/20 text-2xl font-light">|</span>
+                    <span class="text-netflix-gray text-sm font-medium tracking-wide uppercase">Privacy</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 py-12 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto w-full">
+        <h1 class="text-3xl font-bold mb-8">Kebijakan Privasi</h1>
+
+        <div class="space-y-8 text-netflix-gray leading-relaxed">
+            <section>
+                <h2 class="text-xl font-semibold text-white mb-3">1. Informasi yang Kami Kumpulkan</h2>
+                <p>Kami hanya mengumpulkan informasi minimal yang diperlukan untuk pengoperasian Netflix Access Hub,
+                    khususnya mengenai token akses akun Netflix dan data sesi yang dikelola dalam dasbor ini.</p>
+            </section>
+
+            <section>
+                <h2 class="text-xl font-semibold text-white mb-3">2. Bagaimana Kami Menggunakan Informasi</h2>
+                <p>Informasi yang ditampilkan (kode OTP, tautan Rumah Tangga) diambil secara real-time dari backend aman
+                    kami. Kami tidak menyimpan kemampuan penjelajahan pribadi Anda atau data pribadi lainnya secara
+                    permanen di dasbor ini.</p>
+            </section>
+
+            <section>
+                <h2 class="text-xl font-semibold text-white mb-3">3. Keamanan Data</h2>
+                <p>Semua transmisi data dienkripsi. Akses ke dasbor ini dibatasi hanya untuk pengguna yang berwenang.
+                </p>
+            </section>
+
+            <section>
+                <h2 class="text-xl font-semibold text-white mb-3">4. Cookies</h2>
+                <p>Kami menggunakan penyimpanan lokal hanya untuk mempertahankan status sesi dan preferensi Anda
+                    (seperti mode gelap atau pengaturan tampilan). Tidak ada cookie pelacakan yang digunakan.</p>
+            </section>
+        </div>
+
+        <div class="mt-12 pt-8 border-t border-white/10">
+            <a href="index.html" class="text-primary hover:text-white transition-colors text-sm font-medium">&larr;
+                Kembali ke Dashboard</a>
+        </div>
+    </main>
+
+    <footer class="border-t border-white/5 bg-background-dark py-6 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 text-center text-xs text-netflix-gray/50">
+            <p>©2025 Netflix Access Hub. All rights reserved.</p>
+        </div>
+    </footer>
+</body>
+
+</html>

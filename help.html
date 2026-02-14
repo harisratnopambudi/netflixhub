@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html class="dark" lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pusat Bantuan - Netflix Access Hub</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#e50914",
+                        "primary-dark": "#b20710",
+                        "background-dark": "#0a0a0a",
+                        "surface-dark": "#141414",
+                        "netflix-gray": "#b3b3b3",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"],
+                    },
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet">
+    <style>
+        .glass-panel {
+            background: rgba(20, 20, 20, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+
+<body class="bg-background-dark text-white font-display min-h-screen flex flex-col antialiased">
+    <!-- Header -->
+    <header class="sticky top-0 z-50 w-full glass-panel border-b-0 border-white/5">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <a href="index.html" class="flex items-center gap-3">
+                    <span class="text-primary text-2xl font-bold tracking-tight">NETFLIX</span>
+                    <span class="text-white/20 text-2xl font-light">|</span>
+                    <span class="text-netflix-gray text-sm font-medium tracking-wide uppercase">Help Center</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 py-12 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto w-full">
+        <h1 class="text-3xl font-bold mb-2">Ada yang bisa dibantu?</h1>
+        <p class="text-netflix-gray mb-10">Temukan jawaban terkait penggunaan Netflix Access Hub.</p>
+
+        <div class="space-y-6">
+            <!-- FAQ Item 1 -->
+            <div class="bg-surface-dark border border-white/5 rounded-xl p-6">
+                <div class="flex gap-4">
+                    <span class="material-symbols-outlined text-primary mt-1">vpn_key</span>
+                    <div>
+                        <h3 class="text-lg font-semibold text-white mb-2">Bagaimana cara mendapatkan Kode OTP?</h3>
+                        <p class="text-zinc-400 text-sm leading-relaxed">
+                            Ketika Anda mencoba masuk ke Netflix di perangkat baru, kode akan diminta. Kode akan secara
+                            otomatis muncul di Dashboard di bawah kartu "OTP Access". Salin kode dan masukkan ke
+                            perangkat Anda segera.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FAQ Item 2 -->
+            <div class="bg-surface-dark border border-white/5 rounded-xl p-6">
+                <div class="flex gap-4">
+                    <span class="material-symbols-outlined text-blue-500 mt-1">home_pin</span>
+                    <div>
+                        <h3 class="text-lg font-semibold text-white mb-2">Verifikasi Rumah Tangga (Household)</h3>
+                        <p class="text-zinc-400 text-sm leading-relaxed">
+                            Jika Netflix meminta untuk memperbarui Rumah Tangga Anda ("Update Internet Household"), klik
+                            tombol "Buka Link" pada kartu Household. Ini akan memverifikasi jaringan Anda sebagai bagian
+                            dari rumah tangga utama.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FAQ Item 3 -->
+            <div class="bg-surface-dark border border-white/5 rounded-xl p-6">
+                <div class="flex gap-4">
+                    <span class="material-symbols-outlined text-amber-500 mt-1">timer</span>
+                    <div>
+                        <h3 class="text-lg font-semibold text-white mb-2">Akses Sementara (Perjalanan)</h3>
+                        <p class="text-zinc-400 text-sm leading-relaxed">
+                            Untuk perjalanan, gunakan tautan "Temporary Access". Ini memberikan akses sementara selama
+                            14 hari atau lebih tergantung kebijakan Netflix, berlaku untuk penggunaan di TV hotel atau
+                            perangkat seluler di luar rumah utama.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contact -->
+            <div class="mt-12 text-center">
+                <p class="text-netflix-gray text-sm">Masih butuh bantuan?</p>
+                <a href="https://wa.me/6285155228041"
+                    class="text-primary hover:text-white font-medium mt-1 inline-block">Hubungi Admin</a>
+            </div>
+
+        </div>
+
+        <div class="mt-12 pt-8 border-t border-white/10">
+            <a href="index.html" class="text-primary hover:text-white transition-colors text-sm font-medium">&larr;
+                Kembali ke Dashboard</a>
+        </div>
+    </main>
+
+    <footer class="border-t border-white/5 bg-background-dark py-6 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 text-center text-xs text-netflix-gray/50">
+            <p>©2025 Netflix Access Hub. All rights reserved.</p>
+        </div>
+    </footer>
+</body>
+
+</html>
